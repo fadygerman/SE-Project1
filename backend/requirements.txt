@@ -1,0 +1,10 @@
+# Web Framework
+fastapi
+uvicorn
+starlette
+
+# Database
+sqlalchemy
+
+# Utilities
+python-dotenv
