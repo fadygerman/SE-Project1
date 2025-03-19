@@ -1,47 +1,29 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
 from typing import List
-from datetime import date
-from models.models import Booking, BookingStatus
+
+from database import get_db
+from models.db_models import Booking as BookingModel
+from models.models import Booking
 
 router = APIRouter(
     prefix="/bookings",
     tags=["bookings"]
 )
 
-# Sample data
-bookings_db = [
-    {
-        "id": 1,
-        "user_id": 1,
-        "car_id": 3,
-        "start_date": date(2025, 4, 1),
-        "end_date": date(2025, 4, 5),
-        "total_cost": 375.0,
-        "status": BookingStatus.ACTIVE
-    },
-    {
-        "id": 2,
-        "user_id": 2,
-        "car_id": 1,
-        "start_date": date(2025, 3, 15),
-        "end_date": date(2025, 3, 20),
-        "total_cost": 225.0,
-        "status": BookingStatus.COMPLETED
-    }
-]
-
 # Get all bookings endpoint
 @router.get("/", response_model=List[Booking])
-async def get_bookings():
-    return bookings_db
+async def get_bookings(db: Session = Depends(get_db)):
+    bookings = db.query(BookingModel).all()
+    return bookings
 
 # Get booking by ID endpoint
 @router.get("/{booking_id}", response_model=Booking)
-async def get_booking(booking_id: int):
-    for booking in bookings_db:
-        if booking["id"] == booking_id:
-            return booking
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail=f"Booking with ID {booking_id} not found"
-    )
+async def get_booking(booking_id: int, db: Session = Depends(get_db)):
+    booking = db.query(BookingModel).filter(BookingModel.id == booking_id).first()
+    if booking is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Booking with ID {booking_id} not found"
+        )
+    return booking

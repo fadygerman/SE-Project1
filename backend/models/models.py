@@ -1,7 +1,7 @@
 from datetime import date
 from decimal import Decimal
 from enum import Enum
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
 
 class Car(BaseModel):
@@ -12,6 +12,8 @@ class Car(BaseModel):
     is_available: bool
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+    
+    model_config = ConfigDict(from_attributes=True)
 
 class BookingStatus(str, Enum):
     ACTIVE = "active"
@@ -26,6 +28,8 @@ class User(BaseModel):
     phone_number: str
     password_hash: Optional[str] = None  # Only for internal use, not in responses
     
+    model_config = ConfigDict(from_attributes=True)
+    
 class Booking(BaseModel):
     id: int
     user_id: int
@@ -38,3 +42,5 @@ class Booking(BaseModel):
     # Optional nested objects for full data retrieval
     user: Optional[User] = None
     car: Optional[Car] = None
+    
+    model_config = ConfigDict(from_attributes=True)
