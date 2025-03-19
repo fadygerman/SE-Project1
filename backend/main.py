@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routes import car_routes
+from routes import car_routes, user_routes, booking_routes
 
 
 # Initialize FastAPI app
@@ -21,6 +21,8 @@ async def health_check():
 
 # Include routers
 app.include_router(car_routes.router)
+app.include_router(user_routes.router)
+app.include_router(booking_routes.router)
 
 # Run the application
 if __name__ == "__main__":
