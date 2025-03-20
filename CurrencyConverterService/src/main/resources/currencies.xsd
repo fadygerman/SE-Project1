@@ -7,7 +7,7 @@
     <xs:element name="convertResponse">
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="convertedAmount" type="xs:int"/>
+                <xs:element name="convertedAmount" type="xs:long"/>
             </xs:sequence>
         </xs:complexType>
     </xs:element>
@@ -17,7 +17,7 @@
             <xs:sequence>
                 <xs:element name="fromCurrency" type="xs:string"/>
                 <xs:element name="toCurrency" type="xs:string"/>
-                <xs:element name="amount" type="xs:int"/>
+                <xs:element name="amount" type="xs:long"/>
             </xs:sequence>
         </xs:complexType>
     </xs:element>

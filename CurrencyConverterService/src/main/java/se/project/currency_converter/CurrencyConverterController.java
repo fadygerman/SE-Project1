@@ -1,5 +1,7 @@
 package se.project.currency_converter;
 
+import https.www_w3schools.ConvertRequest;
+import https.www_w3schools.ConvertResponse;
 import https.www_w3schools.GetAvailableCurrenciesRequest;
 import https.www_w3schools.GetAvailableCurrenciesResponse;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
@@ -24,12 +26,14 @@ public class CurrencyConverterController {
         response.getCurrencies().addAll(service.getAvailableCurrencies());
         return response;
     }
-//  TODO: implement converting
-//    @PayloadRoot(namespace = NAMESPACE_URI, localPart = "convertRequest")
-//    @ResponsePayload
-//    public ConvertResponse convert(@RequestPayload ConvertRequest request) {
-//        ConvertResponse response = new ConvertResponse();
-//        response.setConvertedAmount(request.getAmount());
-//        return response;
-//    }
+
+    @PayloadRoot(namespace = NAMESPACE_URI, localPart = "convertRequest")
+    @ResponsePayload
+    public ConvertResponse convert(@RequestPayload ConvertRequest request) {
+        long convertedAmount = service.convert(request.getFromCurrency(), request.getToCurrency(), request.getAmount());
+
+        ConvertResponse response = new ConvertResponse();
+        response.setConvertedAmount(convertedAmount);
+        return response;
+    }
 }
