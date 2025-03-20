@@ -4,19 +4,21 @@ from sqlalchemy.orm import relationship
 from database import Base
 
 class BookingStatus(enum.Enum):
+    PLANNED = "planned"
     ACTIVE = "active"
-    COMPLETED = "completed"
     CANCELED = "canceled"
+    COMPLETED = "completed"
+    OVERDUE = "overdue"
 
 class User(Base):
     __tablename__ = "users"
     
     id = Column(Integer, primary_key=True, index=True)
-    first_name = Column(String)
-    last_name = Column(String)
-    email = Column(String, unique=True, index=True)
-    phone_number = Column(String, unique=True)
-    password_hash = Column(String)
+    first_name = Column(String(50))
+    last_name = Column(String(50))
+    email = Column(String(150), unique=True, index=True)
+    phone_number = Column(String(20), unique=True)
+    password_hash = Column(String(255))
     
     # Relationship to bookings
     bookings = relationship("Booking", back_populates="user")
@@ -28,8 +30,8 @@ class Car(Base):
     __tablename__ = "cars"
     
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String)
-    model = Column(String)
+    name = Column(String(50))
+    model = Column(String(50))
     price_per_day = Column(Numeric(10, 2))
     is_available = Column(Boolean, default=True)
     latitude = Column(Float, nullable=True)
@@ -49,6 +51,8 @@ class Booking(Base):
     car_id = Column(Integer, ForeignKey("cars.id"))
     start_date = Column(Date)
     end_date = Column(Date)
+    pickup_date = Column(Date, nullable=True)
+    return_date = Column(Date, nullable=True)
     total_cost = Column(Numeric(10, 2))
     status = Column(Enum(BookingStatus))
     

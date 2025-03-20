@@ -113,14 +113,18 @@ def seed_data():
             car_id=cars[2].id,
             start_date=date(2025, 4, 1),
             end_date=date(2025, 4, 5),
+            pickup_date=None,  # Will be set when user picks up the car
+            return_date=None,  # Will be set when user returns the car
             total_cost=Decimal("375.0"),
-            status=BookingStatus.ACTIVE
+            status=BookingStatus.PLANNED
         ),
         Booking(
             user_id=users[1].id,
             car_id=cars[0].id,
             start_date=date(2025, 3, 15),
             end_date=date(2025, 3, 20),
+            pickup_date=date(2025, 3, 15),
+            return_date=date(2025, 3, 20),
             total_cost=Decimal("225.0"),
             status=BookingStatus.COMPLETED
         )

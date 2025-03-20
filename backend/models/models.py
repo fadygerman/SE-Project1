@@ -16,9 +16,11 @@ class Car(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 class BookingStatus(str, Enum):
+    PLANNED = "planned"
     ACTIVE = "active"
     COMPLETED = "completed"
     CANCELED = "canceled"
+    OVERDUE = "overdue"
 
 class User(BaseModel):
     id: int
@@ -36,6 +38,8 @@ class Booking(BaseModel):
     car_id: int
     start_date: date
     end_date: date
+    pickup_date: Optional[date] = None
+    return_date: Optional[date] = None
     total_cost: Decimal
     status: BookingStatus
     
