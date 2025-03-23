@@ -4,46 +4,45 @@
 REST API backend for the Car Rental Web Application built using Python FastAPI. Provides authentication, car listing, booking management and payment processing functionality.
 
 ## Features
-- AWS Cognito integration for user authentication
 - RESTful API endpoints for cars, users, and bookings
-- PostgreSQL database with SQLAlchemy ORM
-- Deployment on AWS (Lambda or EC2)
-- Integration with Currency Converter Service
-- Integration with Google Maps
+- SQLite database with SQLAlchemy ORM
+- Simple, lightweight implementation
+- Ready for integration with Currency Converter Service and Google Maps
 
 ## Technology Stack
 - **Language**: Python 3.9+
 - **Framework**: FastAPI
 - **ORM**: SQLAlchemy
-- **Database**: PostgreSQL
-- **Authentication**: AWS Cognito
-- **Deployment**: AWS (Lambda/EC2)
-- **Documentation**: OpenAPI/Swagger
+- **Database**: SQLite (local development), PostgreSQL (in progress)
+- **Documentation**: OpenAPI/Swagger (built into FastAPI)
 
 ## Project Structure
 ```
 backend/
-├── app/
-│   ├── models/         # SQLAlchemy data models
-│   ├── routes/         # API endpoint routes
-│   ├── services/       # Business logic services
-│   ├── schemas/        # Pydantic schemas/validators
-│   ├── utils/          # Helper utilities
-│   └── config.py       # Configuration
-├── migrations/         # Alembic database migrations
-├── tests/              # Test suite
-├── requirements.txt    # Dependencies
-├── Dockerfile          # Container definition
-├── main.py             # Application entrypoint
+├── models/            # Data models
+│   ├── db_models.py   # SQLAlchemy database models
+│   └── models.py      # Pydantic models/schemas
+├── routes/            # API endpoint routes
+│   ├── car_routes.py
+│   ├── booking_routes.py
+│   └── user_routes.py
+├── database.py        # Database connection configuration
+├── main.py            # Application entrypoint
+├── db_seed.py         # Database seeding script
+├── requirements.txt   # Dependencies
 └── README.md
 ```
 
 ## API Endpoints
 
+### Root Endpoints
+- `GET /` - Welcome message
+- `GET /health` - Health check
+
 ### User Endpoints
-- `POST /register` - Register new user
-- `POST /login` - User login
-- `GET /users` - List all users (admin)
+<!-- - `POST /register` - Register new user
+- `POST /login` - User login -->
+- `GET /users` - List all users 
 - `GET /users/{id}` - Get user details
 
 ### Car Endpoints
@@ -52,49 +51,93 @@ backend/
 
 ### Booking Endpoints
 - `GET /bookings` - List user's bookings
-- `POST /bookings` - Create new booking
-- `GET /bookings/{id}` - Get booking details
+- `GET /bookings/{id}` - Get booking
+<!-- - `POST /bookings` - Create new bookingdetails
 - `PUT /bookings/{id}` - Update booking
-- `DELETE /bookings/{id}` - Cancel booking
+- `DELETE /bookings/{id}` - Cancel booking -->
 
 ## Setup Instructions
 1. Clone the repository
 2. Create and activate virtual environment:
    ```
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   python -m venv .venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
    ```
 3. Install dependencies:
    ```
    pip install -r requirements.txt
    ```
-4. Configure environment variables:
+4. Initialize and seed the database:
    ```
-   cp .env.example .env
-   # Edit .env with your database and AWS credentials
+   python db_seed.py
    ```
-5. Run database migrations:
+5. Start development server:
    ```
-   alembic upgrade head
+   uvicorn main:app --reload
    ```
-6. Start development server:
+   or
    ```
-   uvicorn app.main:app --reload
+   python main.py
    ```
+6. Access API documentation:
+   - http://127.0.0.1:8000/docs (Swagger UI)
+   - http://127.0.0.1:8000/redoc (ReDoc)
 
-## AWS Configuration
-1. Create Cognito User Pool
-2. Set up IAM roles for API access
-3. Configure environment variables with AWS credentials
+## Data Models
 
-## Testing
-Run tests with pytest:
-```
-pytest
-```
+### User
+- `id`: Integer (Primary Key)
+- `first_name`: String
+- `last_name`: String
+- `email`: String (Unique)
+- `phone_number`: String (Unique)
+- `password_hash`: String
 
-## Deployment
-Instructions for AWS deployment will be provided in separate documentation.
+### Car
+- `id`: Integer (Primary Key)
+- `name`: String
+- `model`: String
+- `price_per_day`: Decimal
+- `is_available`: Boolean
+- `latitude`: Float (for map integration)
+- `longitude`: Float (for map integration)
+
+### Booking
+- `id`: Integer (Primary Key)
+- `user_id`: Foreign Key (User)
+- `car_id`: Foreign Key (Car)
+- `start_date`: Date
+- `end_date`: Date
+- `pickup_date`: Date (Optional)
+- `return_date`: Date (Optional)
+- `total_cost`: Decimal
+- `status`: Enum (PLANNED, ACTIVE, COMPLETED, CANCELED, OVERDUE)
+
+## Planned Enhancements
+
+### Authentication & Authorization
+- User registration and login endpoints
+- AWS Cognito integration for secure authentication
+- Role-based access control
+
+### Database & Infrastructure
+- Migration to PostgreSQL database
+- Deployment on AWS (Lambda/EC2)
+- CI/CD pipeline setup
+
+### Additional Features
+- Complete CRUD operations for all entities
+- Integration with Currency Converter Service
+- Integration with Google Maps API
+- Filtering options for car listings
+- Pagination for list endpoints
+- Booking creation, modification, and cancellation
+- Payment processing functionality
+
+### Testing & Documentation
+- Comprehensive unit and integration tests
+- AWS configuration documentation
+- Deployment instructions
 
 ## License
 TBD
