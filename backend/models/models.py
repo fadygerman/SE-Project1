@@ -18,6 +18,7 @@ class BookingStatus(str, Enum):
     CANCELED = "canceled"
     OVERDUE = "overdue"
 
+# Response models (output)    
 class User(BaseModel):
     id: int
     first_name: str = Field(description="User's first name", min_length=1, max_length=50)
@@ -86,3 +87,18 @@ class Booking(BaseModel):
         if pickup_date and return_date and return_date < pickup_date:
             raise ValueError('Return date must be after pickup date')
         return return_date
+    
+# Request model (input)
+class BookingCreate(BaseModel):
+    user_id: int = Field(description="ID of the user making the booking")
+    car_id: int = Field(description="ID of the car being booked")
+    start_date: date = Field(description="Start date of the booking period")
+    end_date: date = Field(description="End date of the booking period")
+    
+    @field_validator('end_date')
+    @classmethod
+    def validate_dates(cls, end_date, info):
+        start_date = info.data.get('start_date')
+        if start_date and end_date < start_date:
+            raise ValueError('End date must be after start date')
+        return end_date
