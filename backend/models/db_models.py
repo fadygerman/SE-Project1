@@ -1,3 +1,9 @@
+'''
+SQLAlchemy ORM models for the car rental application.
+These models define the database schema and relationships between entities.
+They are used to interact with the database and perform CRUD operations.
+'''
+
 import enum
 from sqlalchemy import Boolean, Column, Date, Enum, Float, ForeignKey, Integer, String, Numeric
 from sqlalchemy.orm import relationship
@@ -6,8 +12,8 @@ from database import Base
 class BookingStatus(enum.Enum):
     PLANNED = "planned"
     ACTIVE = "active"
-    CANCELED = "canceled"
     COMPLETED = "completed"
+    CANCELED = "canceled"
     OVERDUE = "overdue"
 
 class User(Base):
