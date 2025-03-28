@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routes import car_routes, user_routes, booking_routes
+from routes.v1 import car_routes, user_routes, booking_routes
 
 
 # Initialize FastAPI app
@@ -19,10 +19,10 @@ async def root():
 async def health_check():
     return {"status": "healthy"}
 
-# Include routers
-app.include_router(car_routes.router)
-app.include_router(user_routes.router)
-app.include_router(booking_routes.router)
+# Include versioned routers
+app.include_router(car_routes.router, prefix="/api/v1")
+app.include_router(user_routes.router, prefix="/api/v1")
+app.include_router(booking_routes.router, prefix="/api/v1")
 
 # Run the application
 if __name__ == "__main__":

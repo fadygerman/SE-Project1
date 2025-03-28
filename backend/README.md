@@ -6,7 +6,8 @@ REST API backend for the Car Rental Web Application built using Python FastAPI. 
 ## Features
 - RESTful API endpoints for cars, users, and bookings
 - SQLite database with SQLAlchemy ORM
-- Simple, lightweight implementation
+- Pydantic models for data validatin, serialization. 
+- Simple, lightweight implementation 
 - Ready for integration with Currency Converter Service and Google Maps
 
 ## Technology Stack
@@ -133,6 +134,7 @@ backend/
 - Pagination for list endpoints
 - Booking creation, modification, and cancellation
 - Payment processing functionality
+- Implement soft deletion (is_active flag)
 
 ### Testing & Documentation
 - Comprehensive unit and integration tests
