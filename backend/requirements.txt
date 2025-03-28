@@ -6,5 +6,8 @@ starlette
 # Database
 sqlalchemy
 
+# Validation
+email-validator
+
 # Utilities
 python-dotenv

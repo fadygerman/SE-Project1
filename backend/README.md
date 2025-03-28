@@ -4,9 +4,12 @@
 REST API backend for the Car Rental Web Application built using Python FastAPI. Provides authentication, car listing, booking management and payment processing functionality.
 
 ## Features
-- RESTful API endpoints for cars, users, and bookings
+- RESTful API endpoints for cars, users, and bookings with versioning support
 - SQLite database with SQLAlchemy ORM
-- Pydantic models for data validatin, serialization. 
+- Pydantic models with advanced validation and field documentation
+- API versioning for backward compatibility
+- Email validation and field validation rules
+- Full OpenAPI/Swagger documentation
 - Simple, lightweight implementation 
 - Ready for integration with Currency Converter Service and Google Maps
 
@@ -16,6 +19,7 @@ REST API backend for the Car Rental Web Application built using Python FastAPI. 
 - **ORM**: SQLAlchemy
 - **Database**: SQLite (local development), PostgreSQL (in progress)
 - **Documentation**: OpenAPI/Swagger (built into FastAPI)
+- **Validation**: Pydantic with email-validator
 
 ## Project Structure
 ```
@@ -24,9 +28,10 @@ backend/
 │   ├── db_models.py   # SQLAlchemy database models
 │   └── models.py      # Pydantic models/schemas
 ├── routes/            # API endpoint routes
-│   ├── car_routes.py
-│   ├── booking_routes.py
-│   └── user_routes.py
+│   └── v1/            # Version 1 API endpoints
+│        ├── car_routes.py
+│        ├── booking_routes.py
+│        └── user_routes.py
 ├── database.py        # Database connection configuration
 ├── main.py            # Application entrypoint
 ├── db_seed.py         # Database seeding script
@@ -41,21 +46,21 @@ backend/
 - `GET /health` - Health check
 
 ### User Endpoints
-<!-- - `POST /register` - Register new user
-- `POST /login` - User login -->
-- `GET /users` - List all users 
-- `GET /users/{id}` - Get user details
+<!-- - `POST /api/v1/register` - Register new user
+- `POST /api/v1/login` - User login -->
+- `GET /api/v1/users` - List all users 
+- `GET /api/v1/users/{id}` - Get user details
 
 ### Car Endpoints
-- `GET /cars` - List all cars with filtering
-- `GET /cars/{id}` - Get specific car details
+- `GET /api/v1/cars` - List all cars with filtering
+- `GET /api/v1/cars/{id}` - Get specific car details
 
 ### Booking Endpoints
-- `GET /bookings` - List user's bookings
-- `GET /bookings/{id}` - Get booking
-<!-- - `POST /bookings` - Create new bookingdetails
-- `PUT /bookings/{id}` - Update booking
-- `DELETE /bookings/{id}` - Cancel booking -->
+- `GET /api/v1/bookings` - List user's bookings
+- `GET /api/v1/bookings/{id}` - Get booking details
+<!-- - `POST /api/v1/bookings` - Create new booking
+- `PUT /api/v1/bookings/{id}` - Update booking
+- `DELETE /api/v1/bookings/{id}` - Cancel booking -->
 
 ## Setup Instructions
 1. Clone the repository
@@ -90,15 +95,15 @@ backend/
 - `id`: Integer (Primary Key)
 - `first_name`: String
 - `last_name`: String
-- `email`: String (Unique)
-- `phone_number`: String (Unique)
-- `password_hash`: String
+- `email`: EmailStr (Unique, validated)
+- `phone_number`: String (Unique, validated)
+- `password_hash`: String (excluded from responses)
 
 ### Car
 - `id`: Integer (Primary Key)
 - `name`: String
 - `model`: String
-- `price_per_day`: Decimal
+- `price_per_day`: Decimal (validated > 0)
 - `is_available`: Boolean
 - `latitude`: Float (for map integration)
 - `longitude`: Float (for map integration)
@@ -107,12 +112,21 @@ backend/
 - `id`: Integer (Primary Key)
 - `user_id`: Foreign Key (User)
 - `car_id`: Foreign Key (Car)
-- `start_date`: Date
-- `end_date`: Date
+- `start_date`: Date (validated)
+- `end_date`: Date (validated to be after start_date)
 - `pickup_date`: Date (Optional)
-- `return_date`: Date (Optional)
-- `total_cost`: Decimal
+- `return_date`: Date (Optional, validated against pickup_date)
+- `total_cost`: Decimal (validated > 0)
 - `status`: Enum (PLANNED, ACTIVE, COMPLETED, CANCELED, OVERDUE)
+
+## Implemented Enhancements
+
+- API versioning for backward compatibility
+- Field validation rules with descriptive error messages
+- Email address validation using email-validator
+- Request/response model validation with Pydantic
+- Absolute path configuration for database file location
+- Field documentation for improved OpenAPI documentation
 
 ## Planned Enhancements
 
@@ -125,6 +139,8 @@ backend/
 - Migration to PostgreSQL database
 - Deployment on AWS (Lambda/EC2)
 - CI/CD pipeline setup
+- Implement soft deletion (is_active flag)
+- Add timestamps (created_at, updated_at)
 
 ### Additional Features
 - Complete CRUD operations for all entities
@@ -134,7 +150,6 @@ backend/
 - Pagination for list endpoints
 - Booking creation, modification, and cancellation
 - Payment processing functionality
-- Implement soft deletion (is_active flag)
 
 ### Testing & Documentation
 - Comprehensive unit and integration tests
