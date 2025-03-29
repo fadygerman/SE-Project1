@@ -1,7 +1,7 @@
 # Car Rental Backend API
 
 ## Overview
-REST API backend for the Car Rental Web Application built using Python FastAPI. Provides authentication, car listing, booking management and payment processing functionality.
+REST API backend for the Car Rental Web Application built using Python FastAPI. Provides authentication, car listing, booking management and payment processing functionality. Features comprehensive test coverage with pytest for reliability and maintainability.
 
 ## Features
 - RESTful API endpoints for cars, users, and bookings with versioning support
@@ -10,7 +10,9 @@ REST API backend for the Car Rental Web Application built using Python FastAPI. 
 - API versioning for backward compatibility
 - Email validation and field validation rules
 - Full OpenAPI/Swagger documentation
-- Simple, lightweight implementation 
+- Comprehensive test suite with pytest and class-based organization
+- Mock-based testing for date-dependent operations
+- Simple, lightweight implementation
 - Ready for integration with Currency Converter Service and Google Maps
 
 ## Technology Stack
@@ -20,6 +22,8 @@ REST API backend for the Car Rental Web Application built using Python FastAPI. 
 - **Database**: SQLite (local development), PostgreSQL (in progress)
 - **Documentation**: OpenAPI/Swagger (built into FastAPI)
 - **Validation**: Pydantic with email-validator
+- **Testing**: pytest, pytest-cov, unittest.mock
+- **Test Client**: FastAPI TestClient
 
 ## Project Structure
 ```
@@ -32,9 +36,15 @@ backend/
 │        ├── car_routes.py
 │        ├── booking_routes.py
 │        └── user_routes.py
+├── tests/             # Test suite
+│   ├── conftest.py    # Test fixtures and configuration
+│   ├── test_booking_routes.py
+│   ├── test_car_routes.py
+│   └── test_user_routes.py
 ├── database.py        # Database connection configuration
 ├── main.py            # Application entrypoint
 ├── db_seed.py         # Database seeding script
+├── pytest.ini         # Pytest configuration
 ├── requirements.txt   # Dependencies
 └── README.md
 ```
@@ -46,8 +56,9 @@ backend/
 - `GET /health` - Health check
 
 ### User Endpoints
-<!-- - `POST /api/v1/register` - Register new user
-- `POST /api/v1/login` - User login -->
+- `POST /api/v1/register` - Register new user
+- `POST /api/v1/confirm-registration` - Confirm registration with code
+<!-- - `POST /api/v1/login` - User login -->
 - `GET /api/v1/users` - List all users 
 - `GET /api/v1/users/{id}` - Get user details
 
@@ -128,6 +139,82 @@ backend/
 - Absolute path configuration for database file location
 - Field documentation for improved OpenAPI documentation
 
+## Testing
+
+### Running Tests
+The project uses pytest for automated testing. To run the tests:
+
+```bash
+# Run all tests
+python -m pytest
+
+# Run with coverage report
+python -m pytest --cov=. --cov-report=html
+
+# Run specific test file
+python -m pytest tests/test_booking_routes.py
+```
+
+### Test Structure
+Tests are organized using pytest class-based structure for better organization:
+
+#### Booking Tests
+- **TestBookingCreation**: Tests for creating bookings
+- **TestBookingDateUpdates**: Tests for updating booking dates
+- **TestBookingStatusTransitions**: Tests for status transitions
+- **TestBookingErrorHandling**: Tests for API error handling
+- **TestBookingRetrieval**: Tests for retrieving bookings 
+- **TestBookingEdgeCases**: Tests for edge cases
+
+#### Car Tests
+- **TestCarRetrieval**: Tests for retrieving cars and filtering
+
+#### User Tests
+- **TestUserRetrieval**: Tests for user lookup and profile retrieval
+
+### Testing Approach
+
+#### Fixtures
+Tests use fixtures defined in `conftest.py` including:
+- Database fixture (`test_db`) - SQLite in-memory database
+- Test data fixture (`test_data`) - sample users, cars and bookings
+- API client fixture (`client`) - FastAPI test client
+
+#### Mocking
+Unit tests use the `unittest.mock` library to simulate:
+- Current date (`patch('routes.v1.booking_routes.date')`)
+- External dependencies
+
+#### Parameterized Tests
+Complex validation logic is tested with parameterized tests:
+```python
+@pytest.mark.parametrize("date_func,field,error_message", [
+    (lambda b: b.start_date - timedelta(days=1), "pickup_date", "within the booking period"),
+    (lambda b: b.end_date + timedelta(days=1), "pickup_date", "within the booking period"),
+])
+def test_date_validation_parametrized(client, test_data, date_func, field, error_message):
+    # Test implementation
+```
+
+### Test Coverage
+The test suite provides comprehensive coverage of:
+- All REST API endpoints (GET, POST, PUT)
+- Business logic validation rules
+- Error handling scenarios
+- Status transitions (PLANNED → ACTIVE → COMPLETED)
+- Date and time validations
+- Edge cases and validation errors
+
+### Test Configuration
+Custom pytest settings are in `pytest.ini`:
+```ini
+[pytest]
+testpaths = tests
+python_files = test_*.py
+python_functions = test_*
+python_classes = Test*
+```
+
 ## Planned Enhancements
 
 ### Authentication & Authorization
@@ -152,7 +239,6 @@ backend/
 - Payment processing functionality
 
 ### Testing & Documentation
-- Comprehensive unit and integration tests
 - AWS configuration documentation
 - Deployment instructions
 
