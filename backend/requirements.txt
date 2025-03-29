@@ -8,6 +8,16 @@ sqlalchemy
 
 # Validation
 email-validator
+passlib
 
 # Utilities
 python-dotenv
+
+# AWS SDK
+boto3
+
+# Authentication
+authlib
+itsdangerous
+httpx
+bcrypt
