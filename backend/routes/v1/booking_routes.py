@@ -217,10 +217,14 @@ async def update_booking(booking_id: int, booking_update: BookingUpdate, db: Ses
                 detail="Return date cannot be in the future"
             )
         
-        # Optionally: Auto-update status when return_date is set
-        if booking.status == BookingStatus.ACTIVE:
-            update_data['status'] = BookingStatus.COMPLETED
-    
+        # Check if booking is already ACTIVE or is being set to ACTIVE in this request
+        current_status = update_data.get('status', booking.status)
+        # When return_date is set, allow transition from both ACTIVE and OVERDUE to COMPLETED
+        if (current_status == BookingStatus.ACTIVE or 
+            booking.status == BookingStatus.ACTIVE or 
+            booking.status == BookingStatus.OVERDUE):
+            update_data['status'] = BookingStatus.COMPLETED    
+
     # Ensure return_date cannot be set if pickup_date is null
     if 'return_date' in update_data and not booking.pickup_date and 'pickup_date' not in update_data:
         raise HTTPException(
@@ -244,7 +248,9 @@ async def update_booking(booking_id: int, booking_update: BookingUpdate, db: Ses
         start_date = update_data.get('start_date', booking.start_date)
         end_date = update_data.get('end_date', booking.end_date)
         
-        if update_data['return_date'] < start_date or update_data['return_date'] > end_date:
+        # Allow return dates after booking period for OVERDUE bookings
+        if (update_data['return_date'] < start_date or 
+            (update_data['return_date'] > end_date and booking.status != BookingStatus.OVERDUE)):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Return date must be within the booking period"
