@@ -110,6 +110,7 @@ async def update_booking(booking_id: int, booking_update: BookingUpdate, db: Ses
     
     # Handle status transitions with automatic date updates
     if 'status' in update_data:
+        update_data['status'] = normalize_status(update_data['status'])
         new_status = update_data['status']
         # When transitioning to ACTIVE, set pickup_date to today if not provided
         if new_status == BookingStatus.ACTIVE and booking.status == BookingStatus.PLANNED:
@@ -258,3 +259,16 @@ async def update_booking(booking_id: int, booking_update: BookingUpdate, db: Ses
     db.refresh(booking)
     
     return booking
+
+def normalize_status(status_value):
+    """Convert any status format to the proper enum value"""
+    if isinstance(status_value, BookingStatus):
+        return status_value
+        
+    if isinstance(status_value, str):
+        # Try to match case-insensitive
+        for status in BookingStatus:
+            if status.name.lower() == status_value.lower():
+                return status
+    
+    return status_value

@@ -12,11 +12,11 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 from typing import Optional
 
 class BookingStatus(str, Enum):
-    PLANNED = "planned"
-    ACTIVE = "active"
-    COMPLETED = "completed"
-    CANCELED = "canceled"
-    OVERDUE = "overdue"
+    PLANNED = "PLANNED"
+    ACTIVE = "ACTIVE"
+    COMPLETED = "COMPLETED"
+    CANCELED = "CANCELED"
+    OVERDUE = "OVERDUE"
 
 # Response models (output)    
 class User(BaseModel):
@@ -88,7 +88,7 @@ class Booking(BaseModel):
             raise ValueError('Return date must be after pickup date')
         return return_date
     
-# Request model (input)
+# Request models (input)
 class BookingCreate(BaseModel):
     user_id: int = Field(description="ID of the user making the booking")
     car_id: int = Field(description="ID of the car being booked")
@@ -141,3 +141,25 @@ class BookingUpdate(BaseModel):
         if return_date < pickup_date:
             raise ValueError('Return date must be after pickup date')
         return return_date
+    
+class UserRegister(BaseModel):
+    first_name: str = Field(description="User's first name", min_length=1, max_length=50)
+    last_name: str = Field(description="User's last name", min_length=1, max_length=50)
+    email: EmailStr = Field(description="User's email address")
+    phone_number: str = Field(description="User's phone number")
+    password: str = Field(description="User's password", min_length=8)
+    
+    @field_validator('phone_number')
+    @classmethod
+    def validate_phone(cls, v):
+        if not v or len(v) < 8:
+            raise ValueError('Phone number must be at least 8 characters')
+        return v
+    
+    @field_validator('password')
+    @classmethod
+    def validate_password(cls, v):
+        if len(v) < 8:
+            raise ValueError('Password must be at least 8 characters')
+        # Add more password validation as needed (special chars, numbers, etc.)
+        return v
