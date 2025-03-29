@@ -1,0 +1,9 @@
+spring.application.name: currency-converter
+
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwt-set-uri: https://cognito-idp.eu-central-1.amazonaws.com/eu-central-1_HcdYDIVFB/.well-known/jwks.json
+          issuer-uri: https://cognito-idp.eu-central-1.amazonaws.com/eu-central-1_HcdYDIVFB
