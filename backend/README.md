@@ -59,8 +59,8 @@ backend/
 - `GET /api/v1/bookings` - List user's bookings
 - `GET /api/v1/bookings/{id}` - Get booking details
 - `POST /api/v1/bookings` - Create new booking
-<!-- - `PUT /api/v1/bookings/{id}` - Update booking
-- `DELETE /api/v1/bookings/{id}` - Cancel booking -->
+- `PUT /api/v1/bookings/{id}` - Update booking
+<!-- - `DELETE /api/v1/bookings/{id}` - Cancel booking -->
 
 ## Setup Instructions
 1. Clone the repository
