@@ -102,3 +102,42 @@ class BookingCreate(BaseModel):
         if start_date and end_date < start_date:
             raise ValueError('End date must be after start date')
         return end_date
+    
+class BookingUpdate(BaseModel):
+    start_date: Optional[date] = Field(None, description="Updated start date")
+    end_date: Optional[date] = Field(None, description="Updated end date") 
+    status: Optional[BookingStatus] = Field(None, description="Updated booking status")
+    pickup_date: Optional[date] = Field(None, description="Actual date when car was picked up")
+    return_date: Optional[date] = Field(None, description="Actual date when car was returned")
+    
+    model_config = ConfigDict(from_attributes=True)
+    
+    @field_validator('end_date')
+    @classmethod
+    def validate_dates(cls, end_date, info):
+        if end_date is None:
+            return end_date
+            
+        start_date = info.data.get('start_date')
+        if start_date is None:
+            # If start_date not provided in update, we'll need to check against existing booking
+            return end_date
+            
+        if end_date < start_date:
+            raise ValueError('End date must be after start date')
+        return end_date
+        
+    @field_validator('return_date')
+    @classmethod
+    def validate_return_date(cls, return_date, info):
+        if return_date is None:
+            return return_date
+            
+        pickup_date = info.data.get('pickup_date')
+        if pickup_date is None:
+            # If pickup_date not provided in update, we'll need to check against existing booking
+            return return_date
+            
+        if return_date < pickup_date:
+            raise ValueError('Return date must be after pickup date')
+        return return_date
