@@ -101,7 +101,6 @@ def normalize_status(status_value):
         for status in BookingStatus:
             if status.name.lower() == status_value.lower():
                 return status
-    
     return status_value
 
 def handle_status_transitions(booking: BookingModel, update_data: dict):

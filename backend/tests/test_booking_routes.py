@@ -468,6 +468,80 @@ class TestBookingEdgeCases:
         update_data = {"start_date": str(date(2024, 4, 2))}
         response = client.put(f"/api/v1/bookings/{booking_id}", json=update_data)
         assert response.status_code == status.HTTP_200_OK
+    
+    def test_update_booking_overlapping_dates(self, client, test_data, test_db):
+        """Test updating a booking to overlap with another booking"""
+        # Get two different bookings (need to ensure they use different cars initially)
+        booking1 = test_data["bookings"][0]
+        booking2 = test_data["bookings"][1]
+        
+        # Update booking2 to use the same car as booking1
+        booking2.car_id = booking1.car_id
+        test_db.commit()
+        
+        # Try to update booking1's dates to overlap with booking2
+        update_data = {
+            "start_date": str(booking2.start_date),
+            "end_date": str(booking2.end_date)
+        }
+        
+        response = client.put(f"/api/v1/bookings/{booking1.id}", json=update_data)
+        
+        # Check status code and error
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "overlap with another booking" in response.json()["detail"]
+
+    def test_pickup_after_return_date(self, client, test_data, test_db):
+        """Test setting pickup date after return date"""
+        booking_id = test_data["bookings"][0].id
+        
+        # First set a return date
+        booking = test_db.query(Booking).filter_by(id=booking_id).first()
+        booking.status = BookingStatus.ACTIVE
+        booking.pickup_date = date(2024, 4, 5)
+        booking.return_date = date(2024, 4, 10)
+        test_db.commit()
+        
+        # Now try to update pickup date to after return date
+        update_data = {"pickup_date": "2024-04-12"}  # After return date
+        
+        response = client.put(f"/api/v1/bookings/{booking_id}", json=update_data)
+        
+        # Check status code and error
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "Return date must be after pickup date" in response.json()["detail"]
+
+    def test_normalize_status_edge_cases(self, client, test_data):
+        """Test normalize_status with non-string, non-enum values"""
+        booking_id = test_data["bookings"][0].id
+        
+        # Test with integer status (should use default value)
+        update_data = {"status": 123}  # Not a valid string or enum
+        response = client.put(f"/api/v1/bookings/{booking_id}", json=update_data)
+        
+        # Should get validation error from Pydantic
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+    @patch('services.booking_service.date')
+    def test_future_pickup_date(self, mock_date, client, test_data):
+        """Test setting pickup date in the future"""
+        booking_id = test_data["bookings"][0].id
+        
+        # Mock today's date
+        mock_today = date(2024, 4, 1)
+        mock_date.today.return_value = mock_today
+        mock_date.side_effect = lambda *args, **kw: date(*args, **kw)
+        
+        # Try to set pickup date in the future
+        future_date = mock_today + timedelta(days=1)
+        update_data = {"pickup_date": str(future_date)}
+        
+        response = client.put(f"/api/v1/bookings/{booking_id}", json=update_data)
+        
+        # Check status code and error
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "cannot be in the future" in response.json()["detail"]
 
 # Example of a parameterized test for validation rules
 @pytest.mark.parametrize("date_func,field,error_message", [
