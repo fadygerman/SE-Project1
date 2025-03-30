@@ -3,7 +3,7 @@ from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 # SQLite database URL - this will create the database file in the current directory
-DATABASE_URL = "sqlite:///./backend/car_rental.db"
+DATABASE_URL = "sqlite:///./car_rental.db"
 
 # Create SQLAlchemy engine
 engine = create_engine(

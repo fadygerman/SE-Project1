@@ -28,50 +28,17 @@ REST API backend for the Car Rental Web Application built using Python FastAPI. 
 ## Project Structure
 ```
 backend/
-├── models/            # Data models
-│   ├── db_models.py   # SQLAlchemy database models
-│   └── models.py      # Pydantic models/schemas
-├── routes/            # API endpoint routes
-│   └── v1/            # Version 1 API endpoints
-│        ├── car_routes.py
-│        ├── booking_routes.py
-│        └── user_routes.py
-├── tests/             # Test suite
-│   ├── conftest.py    # Test fixtures and configuration
-│   ├── test_booking_routes.py
-│   ├── test_car_routes.py
-│   └── test_user_routes.py
-├── database.py        # Database connection configuration
-├── main.py            # Application entrypoint
-├── db_seed.py         # Database seeding script
-├── pytest.ini         # Pytest configuration
-├── requirements.txt   # Dependencies
-└── README.md
+├── models/
+├── routes/
+├── tests/
+├── database.py
+├── main.py
+└── requirements.txt
 ```
 
-## API Endpoints
-
-### Root Endpoints
-- `GET /` - Welcome message
-- `GET /health` - Health check
-
-### User Endpoints
-- `POST /api/v1/register` - Register new user
-- `POST /api/v1/confirm-registration` - Confirm registration with code
-<!-- - `POST /api/v1/login` - User login -->
-- `GET /api/v1/users` - List all users 
-- `GET /api/v1/users/{id}` - Get user details
-
-### Car Endpoints
-- `GET /api/v1/cars` - List all cars with filtering
-- `GET /api/v1/cars/{id}` - Get specific car details
-
-### Booking Endpoints
-- `GET /api/v1/bookings` - List user's bookings
-- `GET /api/v1/bookings/{id}` - Get booking details
-- `POST /api/v1/bookings` - Create new booking
-- `PUT /api/v1/bookings/{id}` - Update booking
-<!-- - `DELETE /api/v1/bookings/{id}` - Cancel booking -->
+## Access API documentation
+   - http://127.0.0.1:8000/docs (Swagger UI)
+   - http://127.0.0.1:8000/redoc (ReDoc)
 
 ## Setup Instructions
 1. Clone the repository
@@ -96,39 +63,7 @@ backend/
    ```
    python main.py
    ```
-6. Access API documentation:
-   - http://127.0.0.1:8000/docs (Swagger UI)
-   - http://127.0.0.1:8000/redoc (ReDoc)
 
-## Data Models
-
-### User
-- `id`: Integer (Primary Key)
-- `first_name`: String
-- `last_name`: String
-- `email`: EmailStr (Unique, validated)
-- `phone_number`: String (Unique, validated)
-- `password_hash`: String (excluded from responses)
-
-### Car
-- `id`: Integer (Primary Key)
-- `name`: String
-- `model`: String
-- `price_per_day`: Decimal (validated > 0)
-- `is_available`: Boolean
-- `latitude`: Float (for map integration)
-- `longitude`: Float (for map integration)
-
-### Booking
-- `id`: Integer (Primary Key)
-- `user_id`: Foreign Key (User)
-- `car_id`: Foreign Key (Car)
-- `start_date`: Date (validated)
-- `end_date`: Date (validated to be after start_date)
-- `pickup_date`: Date (Optional)
-- `return_date`: Date (Optional, validated against pickup_date)
-- `total_cost`: Decimal (validated > 0)
-- `status`: Enum (PLANNED, ACTIVE, COMPLETED, CANCELED, OVERDUE)
 
 ## Implemented Enhancements
 
@@ -232,7 +167,6 @@ python_classes = Test*
 ### Additional Features
 - Complete CRUD operations for all entities
 - Integration with Currency Converter Service
-- Integration with Google Maps API
 - Filtering options for car listings
 - Pagination for list endpoints
 - Booking creation, modification, and cancellation
