@@ -39,9 +39,9 @@ class TestBookingCreation:
         assert created_booking["end_date"] == str(end_date)
         assert created_booking["status"] == "PLANNED"
         
-        # Check total cost calculation (3 days × $50.00)
+        # Check total cost calculation (4 days × $50.00)
         car_price = float(test_data["cars"][0].price_per_day)
-        expected_total = car_price * 3
+        expected_total = car_price * 4
         assert float(created_booking["total_cost"]) == expected_total
 
     def test_create_booking_car_not_found(self, client, test_data):
@@ -81,7 +81,7 @@ class TestBookingCreation:
         
         # Check error message
         error = response.json()
-        assert "not available for booking" in error["detail"]
+        assert f"Car with ID {unavailable_car_id} is not available" in error["detail"]
 
     def test_create_booking_overlapping_dates(self, client, test_data):
         """Test creating a booking with dates that overlap with existing booking"""

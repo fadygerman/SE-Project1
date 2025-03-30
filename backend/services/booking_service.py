@@ -19,7 +19,7 @@ def create_booking(booking: BookingCreate, db: Session):
   if booking_duration < 1:
     raise booking_exceptions.BookingTooShortException(booking.car_id)
   
-  total_cost = calculate_total_cost(booking, booking_duration)
+  total_cost = calculate_total_cost(car, booking_duration)
   
   new_booking = BookingModel(
       user_id=booking.user_id,
