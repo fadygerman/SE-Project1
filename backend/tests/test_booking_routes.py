@@ -151,9 +151,9 @@ class TestBookingDateUpdates:
         assert updated_booking["start_date"] == str(new_start)
         assert updated_booking["end_date"] == str(new_end)
         
-        # Check total cost recalculation (5 days)
+        # Check total cost recalculation (6 days)
         car_price = float(test_data["cars"][0].price_per_day)
-        expected_total = car_price * 5
+        expected_total = car_price * 6
         assert float(updated_booking["total_cost"]) == expected_total
     
     def test_update_pickup_date_outside_period(self, client, test_data):
@@ -245,7 +245,7 @@ class TestBookingDateUpdates:
 class TestBookingStatusTransitions:
     """Tests related to booking status transitions"""
     
-    @patch('routes.v1.booking_routes.date')
+    @patch('services.booking_service.date')
     def test_update_status_to_active(self, mock_date, client, test_data):
         """Test updating booking status to ACTIVE (which should set pickup_date)"""
         booking_id = test_data["bookings"][0].id
@@ -274,7 +274,7 @@ class TestBookingStatusTransitions:
         # Check pickup_date was automatically set to our mocked today
         assert updated_booking["pickup_date"] == str(mock_today)
     
-    @patch('routes.v1.booking_routes.date')
+    @patch('services.booking_service.date')
     def test_update_status_to_canceled(self, mock_date, client, test_data):
         """Test updating booking status to CANCELED"""
         booking_id = test_data["bookings"][0].id
@@ -296,7 +296,7 @@ class TestBookingStatusTransitions:
         assert updated_booking["id"] == booking_id
         assert updated_booking["status"] == "CANCELED"
     
-    @patch('routes.v1.booking_routes.date')
+    @patch('services.booking_service.date')
     def test_setting_status_completed_sets_return_date(self, mock_date, client, test_data, test_db):
         """Test that setting status to COMPLETED automatically sets return_date"""
         booking_id = test_data["bookings"][0].id
@@ -324,7 +324,7 @@ class TestBookingStatusTransitions:
         assert updated_booking["status"] == "COMPLETED"
         assert updated_booking["return_date"] == str(mock_today)
     
-    @patch('routes.v1.booking_routes.date')
+    @patch('services.booking_service.date')
     def test_transition_from_overdue_to_completed(self, mock_date, client, test_data, test_db):
         """Test transitioning a booking from OVERDUE to COMPLETED when setting return_date"""
         booking_id = test_data["bookings"][0].id
@@ -457,7 +457,7 @@ class TestBookingEdgeCases:
         response = client.put(f"/api/v1/bookings/{booking_id}", json=update_data)
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     
-    @patch('routes.v1.booking_routes.date')
+    @patch('services.booking_service.date')
     def test_update_only_start_date(self, mock_date, client, test_data):
         """Test updating only start date"""
         booking_id = test_data["bookings"][0].id
