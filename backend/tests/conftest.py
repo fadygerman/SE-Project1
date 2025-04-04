@@ -6,8 +6,8 @@ from decimal import Decimal
 from datetime import date
 
 from main import app
-from database import Base, get_db
-from models.db_models import User, Car, Booking, BookingStatus
+from database import get_db
+from models.db_models import User, Car, Booking, BookingStatus, Base
 
 # Create test database
 SQLALCHEMY_TEST_DATABASE_URL = "sqlite:///./test.db"

@@ -6,8 +6,9 @@ They are used to interact with the database and perform CRUD operations.
 
 import enum
 from sqlalchemy import Boolean, Column, Date, Enum, Float, ForeignKey, Integer, String, Numeric
-from sqlalchemy.orm import relationship
-from database import Base
+from sqlalchemy.orm import relationship, declarative_base
+
+Base = declarative_base()
 
 class BookingStatus(enum.Enum):
     PLANNED = "PLANNED"
