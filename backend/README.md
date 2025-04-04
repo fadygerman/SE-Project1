@@ -1,100 +1,180 @@
 # Car Rental Backend API
 
 ## Overview
-REST API backend for the Car Rental Web Application built using Python FastAPI. Provides authentication, car listing, booking management and payment processing functionality.
+REST API backend for the Car Rental Web Application built using Python FastAPI. Provides authentication, car listing, booking management and payment processing functionality. Features comprehensive test coverage with pytest for reliability and maintainability.
 
 ## Features
-- AWS Cognito integration for user authentication
-- RESTful API endpoints for cars, users, and bookings
-- PostgreSQL database with SQLAlchemy ORM
-- Deployment on AWS (Lambda or EC2)
-- Integration with Currency Converter Service
-- Integration with Google Maps
+- RESTful API endpoints for cars, users, and bookings with versioning support
+- SQLite database with SQLAlchemy ORM
+- Pydantic models with advanced validation and field documentation
+- API versioning for backward compatibility
+- Email validation and field validation rules
+- Full OpenAPI/Swagger documentation
+- Comprehensive test suite with pytest and class-based organization
+- Mock-based testing for date-dependent operations
+- Simple, lightweight implementation
+- Ready for integration with Currency Converter Service and Google Maps
 
 ## Technology Stack
 - **Language**: Python 3.9+
 - **Framework**: FastAPI
 - **ORM**: SQLAlchemy
-- **Database**: PostgreSQL
-- **Authentication**: AWS Cognito
-- **Deployment**: AWS (Lambda/EC2)
-- **Documentation**: OpenAPI/Swagger
+- **Database**: SQLite (local development), PostgreSQL (in progress)
+- **Documentation**: OpenAPI/Swagger (built into FastAPI)
+- **Validation**: Pydantic with email-validator
+- **Testing**: pytest, pytest-cov, unittest.mock
+- **Test Client**: FastAPI TestClient
 
 ## Project Structure
 ```
 backend/
-├── app/
-│   ├── models/         # SQLAlchemy data models
-│   ├── routes/         # API endpoint routes
-│   ├── services/       # Business logic services
-│   ├── schemas/        # Pydantic schemas/validators
-│   ├── utils/          # Helper utilities
-│   └── config.py       # Configuration
-├── migrations/         # Alembic database migrations
-├── tests/              # Test suite
-├── requirements.txt    # Dependencies
-├── Dockerfile          # Container definition
-├── main.py             # Application entrypoint
-└── README.md
+├── models/
+├── routes/
+├── tests/
+├── database.py
+├── main.py
+└── requirements.txt
 ```
 
-## API Endpoints
-
-### User Endpoints
-- `POST /register` - Register new user
-- `POST /login` - User login
-- `GET /users` - List all users (admin)
-- `GET /users/{id}` - Get user details
-
-### Car Endpoints
-- `GET /cars` - List all cars with filtering
-- `GET /cars/{id}` - Get specific car details
-
-### Booking Endpoints
-- `GET /bookings` - List user's bookings
-- `POST /bookings` - Create new booking
-- `GET /bookings/{id}` - Get booking details
-- `PUT /bookings/{id}` - Update booking
-- `DELETE /bookings/{id}` - Cancel booking
+## Access API documentation
+   - http://127.0.0.1:8000/docs (Swagger UI)
+   - http://127.0.0.1:8000/redoc (ReDoc)
 
 ## Setup Instructions
 1. Clone the repository
 2. Create and activate virtual environment:
    ```
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   python -m venv .venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
    ```
 3. Install dependencies:
    ```
    pip install -r requirements.txt
    ```
-4. Configure environment variables:
+4. Initialize and seed the database:
    ```
-   cp .env.example .env
-   # Edit .env with your database and AWS credentials
+   python db_seed.py
    ```
-5. Run database migrations:
+5. Start development server:
    ```
-   alembic upgrade head
+   uvicorn main:app --reload
    ```
-6. Start development server:
+   or
    ```
-   uvicorn app.main:app --reload
+   python main.py
    ```
 
-## AWS Configuration
-1. Create Cognito User Pool
-2. Set up IAM roles for API access
-3. Configure environment variables with AWS credentials
+
+## Implemented Enhancements
+
+- API versioning for backward compatibility
+- Field validation rules with descriptive error messages
+- Email address validation using email-validator
+- Request/response model validation with Pydantic
+- Absolute path configuration for database file location
+- Field documentation for improved OpenAPI documentation
 
 ## Testing
-Run tests with pytest:
-```
-pytest
+
+### Running Tests
+The project uses pytest for automated testing. To run the tests:
+
+```bash
+# Run all tests
+python -m pytest
+
+# Run with coverage report
+python -m pytest --cov=. --cov-report=html
+
+# Run specific test file
+python -m pytest tests/test_booking_routes.py
 ```
 
-## Deployment
-Instructions for AWS deployment will be provided in separate documentation.
+### Test Structure
+Tests are organized using pytest class-based structure for better organization:
+
+#### Booking Tests
+- **TestBookingCreation**: Tests for creating bookings
+- **TestBookingDateUpdates**: Tests for updating booking dates
+- **TestBookingStatusTransitions**: Tests for status transitions
+- **TestBookingErrorHandling**: Tests for API error handling
+- **TestBookingRetrieval**: Tests for retrieving bookings 
+- **TestBookingEdgeCases**: Tests for edge cases
+
+#### Car Tests
+- **TestCarRetrieval**: Tests for retrieving cars and filtering
+
+#### User Tests
+- **TestUserRetrieval**: Tests for user lookup and profile retrieval
+
+### Testing Approach
+
+#### Fixtures
+Tests use fixtures defined in `conftest.py` including:
+- Database fixture (`test_db`) - SQLite in-memory database
+- Test data fixture (`test_data`) - sample users, cars and bookings
+- API client fixture (`client`) - FastAPI test client
+
+#### Mocking
+Unit tests use the `unittest.mock` library to simulate:
+- Current date (`patch('routes.v1.booking_routes.date')`)
+- External dependencies
+
+#### Parameterized Tests
+Complex validation logic is tested with parameterized tests:
+```python
+@pytest.mark.parametrize("date_func,field,error_message", [
+    (lambda b: b.start_date - timedelta(days=1), "pickup_date", "within the booking period"),
+    (lambda b: b.end_date + timedelta(days=1), "pickup_date", "within the booking period"),
+])
+def test_date_validation_parametrized(client, test_data, date_func, field, error_message):
+    # Test implementation
+```
+
+### Test Coverage
+The test suite provides comprehensive coverage of:
+- All REST API endpoints (GET, POST, PUT)
+- Business logic validation rules
+- Error handling scenarios
+- Status transitions (PLANNED → ACTIVE → COMPLETED)
+- Date and time validations
+- Edge cases and validation errors
+
+### Test Configuration
+Custom pytest settings are in `pytest.ini`:
+```ini
+[pytest]
+testpaths = tests
+python_files = test_*.py
+python_functions = test_*
+python_classes = Test*
+```
+
+## Planned Enhancements
+
+### Authentication & Authorization
+- User registration and login endpoints
+- AWS Cognito integration for secure authentication
+- Role-based access control
+
+### Database & Infrastructure
+- Migration to PostgreSQL database
+- Deployment on AWS (Lambda/EC2)
+- CI/CD pipeline setup
+- Implement soft deletion (is_active flag)
+- Add timestamps (created_at, updated_at)
+
+### Additional Features
+- Complete CRUD operations for all entities
+- Integration with Currency Converter Service
+- Filtering options for car listings
+- Pagination for list endpoints
+- Booking creation, modification, and cancellation
+- Payment processing functionality
+
+### Testing & Documentation
+- AWS configuration documentation
+- Deployment instructions
 
 ## License
 TBD

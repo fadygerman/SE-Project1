@@ -1,5 +1,11 @@
-.vscode/
-.idea/
-.env
-test.db
+*.pyc
 __pycache__/
+.env
+.idea/
+.venv
+.vscode
+.coverage
+*.old
+
+# Database
+*.db
