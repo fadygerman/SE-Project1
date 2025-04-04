@@ -1,0 +1,8 @@
+services:
+  currency_converter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: currency_converter
+    ports:
+      - "8080:8080"

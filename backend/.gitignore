@@ -1,6 +1,7 @@
 *.pyc
 __pycache__/
 .env
+.idea/
 .venv
 .vscode
 .coverage
