@@ -67,7 +67,7 @@ def update_booking(booking_id: int, booking_update: BookingUpdate, db: Session):
     # Update booking
     return apply_booking_updates(booking, update_data, db)
 
-def does_bookings_overlap(car_id: int, start_date: date, end_date: date, db: Session, not_check_with_booking_id: int = None):
+def does_bookings_overlap(car_id: int, start_date: date, end_date: date, db: Session, exclude_booking_id: int = None):
     """Check if the booking overlaps with existing bookings"""
 
     filters = [
@@ -77,8 +77,8 @@ def does_bookings_overlap(car_id: int, start_date: date, end_date: date, db: Ses
         BookingDB.end_date >= start_date
     ]
 
-    if not_check_with_booking_id:
-        filters.append(BookingDB.id != not_check_with_booking_id)
+    if exclude_booking_id:
+        filters.append(BookingDB.id != exclude_booking_id)
     
     overlapping_bookings = db.query(BookingDB).filter(*filters).first()    
     return overlapping_bookings is not None
