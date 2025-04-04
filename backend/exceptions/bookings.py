@@ -12,11 +12,6 @@ class BookingOverlapException(Exception):
   def __init__(self, car_id: int):
     self.car_id = car_id
     self.message = "The car is already booked for the selected dates"
-    
-class BookingTooShortException(Exception):
-  def __init__(self, car_id: None):
-    self.car_id = car_id
-    self.message = "Booking must be for at least 1 day"
 
 class BookingNotFoundException(Exception):
   def __init__(self, booking_id: int):
