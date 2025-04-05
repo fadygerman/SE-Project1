@@ -2,6 +2,7 @@ import pytest
 import os
 import dotenv
 from currency_converter.client import get_jwt_token, get_currency_converter_client
+import zeep.exceptions
 
 @pytest.fixture(scope="session", autouse=True)
 def load_env():
@@ -43,7 +44,7 @@ def test_get_jwt_token_integration_fake_token():
     This test will use the real AUTH0 API to get a JWT token.
     """
     
-    with pytest.raises(Exception):
+    with pytest.raises(ConnectionError):
         client = get_currency_converter_client("fake-token")
     
 
@@ -67,6 +68,21 @@ def test_integration_convert_currency(client):
     assert result is not None
     assert isinstance(result, int)
     assert result > 0, "Conversion result should be positive"
+
+def test_integration_convert_currency_wrong_currency_name(client):
+    
+    wrong_currency_name = 'WRO'
+    try:
+        client.service.convert(wrong_currency_name, 'EUR', 100)
+        pytest.fail("Expected exception was not raised")
+    except zeep.exceptions.Fault as e:
+        if hasattr(e, 'message'):
+            print(f"Exception message attribute: {e.message}")
+        if hasattr(e, 'code'):
+            print(f"Exception code: {e.code}")
+            
+        assert wrong_currency_name in str(e)
+        assert "not available" in str(e).lower()
 
 def test_integration_get_available_currencies(client):
     """Integration test for getting available currencies using the SOAP service.

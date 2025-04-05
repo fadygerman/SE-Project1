@@ -35,4 +35,4 @@ def get_currency_converter_client(jwt_token: str) -> zeep.Client:
     try:
         return zeep.Client('http://localhost:8080/ws/currencies.wsdl', transport=transport)
     except Exception as e:
-        raise Exception(f"Error creating client (probably the server is not running, or you don't have access): {e}")
+        raise ConnectionError(f"Error connecting to currency converter service: {e}")
