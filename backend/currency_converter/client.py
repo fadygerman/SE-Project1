@@ -6,13 +6,18 @@ import dotenv
 
 def get_jwt_token() -> str:
     dotenv.load_dotenv()
-    client_id = os.getenv("COGNITO_CURRENCY_CONVERTER_CLIENT_ID")
-    client_secret = os.getenv("COGNITO_CURRENCY_CONVERTER_CLIENT_SECRET")
+    client_id = os.getenv("AUTH0_CURRENCY_CONVERTER_CLIENT_ID")
+    client_secret = os.getenv("AUTH0_CURRENCY_CONVERTER_CLIENT_SECRET")
 
     response = requests.post(
-        'https://eu-central-1hcdydivfb.auth.eu-central-1.amazoncognito.com/oauth2/token',
-        data=f"grant_type=client_credentials&client_id={client_id}&client_secret={client_secret}&scope=default-m2m-resource-server-ww7zvj/read",
-        headers={'Content-Type': 'application/x-www-form-urlencoded'}
+        'https://dev-nrarsg0w7pf50t7d.us.auth0.com/oauth/token',
+        json= {
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "audience": "https://dev-nrarsg0w7pf50t7d.us.auth0.com/api/v2/",
+            "grant_type": "client_credentials"
+        },
+        headers={'content-type': 'application/json'}
     )
     
     if response.status_code != 200:
@@ -22,10 +27,12 @@ def get_jwt_token() -> str:
 
 def get_currency_converter_client(jwt_token: str) -> zeep.Client:
 
-    # jwt_token = 'eyJraWQiOiJoODJkaXBpQm9nT0J6UllLNzZuaVFUYXRJcnc3dmlMZlwvTnFoV0JYMDcwVT0iLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIxa3E4N3JpMW03NWFqdWE4c21sc3UwZmc2dCIsInRva2VuX3VzZSI6ImFjY2VzcyIsInNjb3BlIjoiZGVmYXVsdC1tMm0tcmVzb3VyY2Utc2VydmVyLXd3N3p2alwvcmVhZCIsImF1dGhfdGltZSI6MTc0MzI1MTEyNiwiaXNzIjoiaHR0cHM6XC9cL2NvZ25pdG8taWRwLmV1LWNlbnRyYWwtMS5hbWF6b25hd3MuY29tXC9ldS1jZW50cmFsLTFfSGNkWURJVkZCIiwiZXhwIjoxNzQzMjU0NzI2LCJpYXQiOjE3NDMyNTExMjYsInZlcnNpb24iOjIsImp0aSI6IjBhNWIwNzRlLTUzMjYtNDM3ZS1iMWIxLTViN2I1NWMwMTE0MiIsImNsaWVudF9pZCI6IjFrcTg3cmkxbTc1YWp1YThzbWxzdTBmZzZ0In0.mmy_OtR_6WuJCj9JFYQEJnyXxVhntDAceg8tWA8qOLRqEKGdvqWA0Sxmr9GFrT6pMhoy6xnxa6h_DL1lMIc3pxlH_TKfbFcxPnrzrALF94OJsP0hMyKXUd22gphcZawkHWC-Wpsp1AOGUWW_eC1jS79GuLk3z79YVeR8yaUXsyKYSwVUUYTIleMZPbgUaTnu_0oYKEt0enqJaIENCMJVl7eQqfDBxO32i7eKnNImpJ8GH-iLzRhWc_oJ28lklEKrf4SKWv6CezOSYAs69YKEVD929r_LGnsrJnYIghBDtkzpt6Gci99Vock44clTbtOkWMHKllgVIrFjUbHyVVQmCg'
+    # jwt_token = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Inh1OVo4UC0zMzBKMG9NOVV1V1MzQiJ9.eyJpc3MiOiJodHRwczovL2Rldi1ucmFyc2cwdzdwZjUwdDdkLnVzLmF1dGgwLmNvbS8iLCJzdWIiOiJ0T3JBOVlzWjJ3aWwySlRxNjM3YTczbjRoY0lQd1c4REBjbGllbnRzIiwiYXVkIjoiaHR0cHM6Ly9kZXYtbnJhcnNnMHc3cGY1MHQ3ZC51cy5hdXRoMC5jb20vYXBpL3YyLyIsImlhdCI6MTc0Mzg2ODU5OSwiZXhwIjoxNzQzOTU0OTk5LCJndHkiOiJjbGllbnQtY3JlZGVudGlhbHMiLCJhenAiOiJ0T3JBOVlzWjJ3aWwySlRxNjM3YTczbjRoY0lQd1c4RCJ9.KsXmFhfHlh5UOiZvaKRL57SwuJ8W9qR_NFFEENYsL1iN0xs5vwzABUphfdBZ-rFAcnHjk7vhkIWv74i9iQASvJQmxvpuEZH3tttem_ew-qBGhM-we6_V1x3SM9CSuUUIZg7TOZQNh0gWoC1IWpqdvWWrMinzi-QGBDZPVkKuPTpoJ8HerRym7CO60DFcmCCuiyNtxJWt3TdwyKdUuYOfEnhVjRh0A0vYNcl7Z9vuAhRFgLdNGuB0sgO7HiPPD3D0cp7Q3B5TSvioLOHArd_oW5MlIdKUp_TYCGU9eJ0KRPVfAqlggZYvpNltPuOrRxLTuW01EY7gRqzr57V8Cvh2pA'
     session = requests.Session()
     session.headers.update({'Authorization': f'Bearer {jwt_token}'})
 
     transport = zeep.Transport(session=session)
-
-    return zeep.Client('http://localhost:8080/ws/currencies.wsdl', transport=transport)
+    try:
+        return zeep.Client('http://localhost:8080/ws/currencies.wsdl', transport=transport)
+    except Exception as e:
+        raise Exception(f"Error creating client (probably the server is not running, or you don't have access): {e}")

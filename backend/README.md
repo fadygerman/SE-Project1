@@ -154,7 +154,7 @@ python_classes = Test*
 
 ### Authentication & Authorization
 - User registration and login endpoints
-- AWS Cognito integration for secure authentication
+- AWS AUTH0 integration for secure authentication
 - Role-based access control
 
 ### Database & Infrastructure
