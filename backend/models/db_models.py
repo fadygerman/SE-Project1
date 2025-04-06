@@ -5,7 +5,7 @@ They are used to interact with the database and perform CRUD operations.
 '''
 
 import enum
-from sqlalchemy import Boolean, Column, Date, Enum, Float, ForeignKey, Integer, String, Numeric
+from sqlalchemy import Boolean, Column, Date, Enum, Float, ForeignKey, Integer, String, Numeric, Time
 from sqlalchemy.orm import relationship, declarative_base
 
 Base = declarative_base()
@@ -61,6 +61,8 @@ class Booking(Base):
     end_date = Column(Date)
     pickup_date = Column(Date, nullable=True)
     return_date = Column(Date, nullable=True)
+    # Store time without timezone (assumed to be in UTC)
+    planned_pickup_time = Column(Time(timezone=False), nullable=False)
     total_cost = Column(Numeric(10, 2))
     status = Column(Enum(BookingStatus))
     

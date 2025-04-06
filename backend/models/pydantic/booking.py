@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date, time, timedelta
 from decimal import Decimal
 from enum import Enum
 from typing import Optional
@@ -21,6 +21,7 @@ class Booking(BaseModel):
     car_id: int = Field(description="ID of the car being booked")
     start_date: date = Field(description="Start date of the booking period")
     end_date: date = Field(description="End date of the booking period")
+    planned_pickup_time: time = Field(description="Time when the car will be picked up on start_date (UTC time)")
     pickup_date: Optional[date] = Field(None, description="Actual date when car was picked up")
     return_date: Optional[date] = Field(None, description="Actual date when car was returned")
     total_cost: Decimal = Field(description="Total cost of the booking", gt=0)
@@ -54,6 +55,7 @@ class BookingCreate(BaseModel):
     car_id: int = Field(description="ID of the car being booked")
     start_date: date = Field(description="Start date of the booking period")
     end_date: date = Field(description="End date of the booking period")
+    planned_pickup_time: time = Field(description="Time when the car will be picked up on start_date (UTC time)")
     
     @field_validator('start_date')
     @classmethod
@@ -78,6 +80,14 @@ class BookingCreate(BaseModel):
         if start_date and end_date < start_date:
             raise ValueError('End date must be after start date')
         return end_date
+    
+    @field_validator('planned_pickup_time')
+    @classmethod
+    def validate_planned_pickup_time(cls, planned_pickup_time):
+        if planned_pickup_time is None:
+            raise ValueError('Planned pickup time is required')
+        # Time is treated as UTC time without timezone information
+        return planned_pickup_time
     
 class BookingUpdate(BaseModel):
     start_date: Optional[date] = Field(None, description="Updated start date")

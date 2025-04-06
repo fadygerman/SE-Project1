@@ -1,10 +1,12 @@
-import pytest
-from fastapi import status
 from datetime import date, timedelta
 from decimal import Decimal
 from unittest.mock import patch
 
-from models.db_models import BookingStatus, Booking
+import pytest
+from fastapi import status
+
+from models.db_models import Booking, BookingStatus
+
 
 class TestBookingCreation:
     """Tests related to creating bookings"""
@@ -30,7 +32,8 @@ class TestBookingCreation:
             "user_id": user_id,
             "car_id": car_id,
             "start_date": str(start_date),
-            "end_date": str(end_date)
+            "end_date": str(end_date),
+            "planned_pickup_time": "10:00:00"
         }
         
         response = client.post("/api/v1/bookings/", json=booking_data)
@@ -57,7 +60,8 @@ class TestBookingCreation:
             "user_id": test_data["users"][0].id,
             "car_id": 999,  # Non-existent car ID
             "start_date": "2025-06-01",
-            "end_date": "2025-06-05"
+            "end_date": "2025-06-05",
+            "planned_pickup_time": "09:30:00"
         }
         
         response = client.post("/api/v1/bookings/", json=booking_data)
@@ -78,7 +82,8 @@ class TestBookingCreation:
             "user_id": test_data["users"][0].id,
             "car_id": unavailable_car_id,
             "start_date": "2025-06-01",
-            "end_date": "2025-06-05"
+            "end_date": "2025-06-05",
+            "planned_pickup_time": "14:00:00"
         }
         
         response = client.post("/api/v1/bookings/", json=booking_data)
@@ -90,7 +95,7 @@ class TestBookingCreation:
         error = response.json()
         assert f"Car with ID {unavailable_car_id} is not available" in error["detail"]
 
-    @patch('services.booking_service.date')
+    @patch('models.pydantic.booking.date')
     def test_create_booking_start_date_today(self, mock_date, client, test_data):
         # Setup mock for date.today()
         mock_today = date(2024, 5, 15)
@@ -102,7 +107,8 @@ class TestBookingCreation:
             "user_id": test_data["users"][0].id,
             "car_id": test_data["cars"][0].id,
             "start_date": str(mock_today),     # Today's date
-            "end_date": str(mock_today + timedelta(days=5))
+            "end_date": str(mock_today + timedelta(days=5)),
+            "planned_pickup_time": "12:00:00"
         }
         
         response = client.post("/api/v1/bookings/", json=booking_data)
@@ -112,7 +118,7 @@ class TestBookingCreation:
         error = response.json()
         assert "Start date must be tomorrow or later" in str(error)
     
-    @patch('services.booking_service.date')
+    @patch('models.pydantic.booking.date')
     def test_create_booking_start_date_past(self, mock_date, client, test_data):
         # Setup mock for date.today()
         mock_today = date(2024, 5, 15)
@@ -125,7 +131,8 @@ class TestBookingCreation:
             "user_id": test_data["users"][0].id,
             "car_id": test_data["cars"][0].id,
             "start_date": str(past_date),     # Date in the past
-            "end_date": str(mock_today + timedelta(days=5))
+            "end_date": str(mock_today + timedelta(days=5)),
+            "planned_pickup_time": "11:30:00"
         }
         
         response = client.post("/api/v1/bookings/", json=booking_data)
@@ -151,7 +158,8 @@ class TestBookingCreation:
             "user_id": test_data["users"][0].id,
             "car_id": existing_booking.car_id,
             "start_date": str(existing_booking.start_date),  # Same start date
-            "end_date": str(existing_booking.end_date + timedelta(days=5))  # Extended end date
+            "end_date": str(existing_booking.end_date + timedelta(days=5)),  # Extended end date
+            "planned_pickup_time": "10:30:00"
         }
         
         response = client.post("/api/v1/bookings/", json=booking_data)
@@ -169,7 +177,8 @@ class TestBookingCreation:
             "user_id": test_data["users"][0].id,
             "car_id": test_data["cars"][0].id,
             "start_date": "2025-06-05",  # Later date
-            "end_date": "2025-06-01"     # Earlier date
+            "end_date": "2025-06-01",     # Earlier date
+            "planned_pickup_time": "10:30:00"
         }
         
         response = client.post("/api/v1/bookings/", json=booking_data)
@@ -193,8 +202,10 @@ class TestBookingCreation:
         booking_data = {
             "user_id": test_data["users"][0].id,
             "car_id": test_data["cars"][0].id,
-            "start_date": str(mock_today + timedelta(days=5))  # Valid future date
+            "start_date": str(mock_today + timedelta(days=5)),  # Valid future date
+            "planned_pickup_time": "10:30:00"
             # No end_date provided
+            
         }
         
         response = client.post("/api/v1/bookings/", json=booking_data)
@@ -205,6 +216,27 @@ class TestBookingCreation:
         # Check error message
         error = response.json()
         assert "end_date" in str(error)  # Field should be mentioned in the error
+        assert "field required" in str(error).lower()  # Standard Pydantic missing field message
+
+    def test_create_booking_without_planned_pickup_time(self, client, test_data):
+        """Test creating a booking without providing a planned pickup time"""
+        # Create booking data without planned_pickup_time
+        booking_data = {
+            "user_id": test_data["users"][0].id,
+            "car_id": test_data["cars"][0].id,
+            "start_date": str(date.today() + timedelta(days=5)),  # Valid future date
+            "end_date": str(date.today() + timedelta(days=10))
+            # No planned_pickup_time provided
+        }
+        
+        response = client.post("/api/v1/bookings/", json=booking_data)
+        
+        # Check status code - should be validation error
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        
+        # Check error message
+        error = response.json()
+        assert "planned_pickup_time" in str(error)  # Field should be mentioned in the error
         assert "field required" in str(error).lower()  # Standard Pydantic missing field message
 
 

@@ -3,7 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from fastapi.testclient import TestClient
 from decimal import Decimal
-from datetime import date
+from datetime import date, time
 
 from main import app
 from database import get_db
@@ -99,6 +99,7 @@ def test_data(test_db):
         car_id=car1.id,
         start_date=date(2024, 4, 1),
         end_date=date(2024, 4, 5),
+        planned_pickup_time=time(10, 30),
         pickup_date=None,
         return_date=None,
         total_cost=Decimal("200.00"),
@@ -110,6 +111,7 @@ def test_data(test_db):
         car_id=car2.id,
         start_date=date(2024, 5, 1),
         end_date=date(2024, 5, 3),
+        planned_pickup_time=time(14, 0),
         pickup_date=date(2024, 5, 1),
         return_date=None,
         total_cost=Decimal("150.00"),

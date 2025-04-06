@@ -28,6 +28,7 @@ def create_booking(booking: BookingCreate, db: Session):
       car_id=booking.car_id,
       start_date=booking.start_date,
       end_date=booking.end_date,
+      planned_pickup_time=booking.planned_pickup_time,  # Store time in UTC (without timezone)
       total_cost=total_cost,
       status=BookingStatus.PLANNED
   )
