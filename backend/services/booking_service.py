@@ -13,9 +13,6 @@ def create_booking(booking: BookingCreate, db: Session):
   if not car.is_available:
     raise booking_exceptions.CarNotAvailableException(booking.car_id)
   
-  if not is_date_after_today(booking.start_date):
-    raise booking_exceptions.BookingStartDateException()
-  
   if does_bookings_overlap(booking.car_id, booking.start_date, booking.end_date, db):
     raise booking_exceptions.BookingOverlapException(booking.car_id)
   

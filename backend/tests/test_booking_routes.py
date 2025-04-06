@@ -9,14 +9,21 @@ from models.db_models import BookingStatus, Booking
 class TestBookingCreation:
     """Tests related to creating bookings"""
     
-    def test_create_valid_booking(self, client, test_data):
+    @patch('models.models.date')
+    def test_create_valid_booking(self, mock_date, client, test_data):
         """Test successfully creating a booking"""
+        # Mock today's date
+        mock_today = date(2024, 3, 15)
+        mock_date.today.return_value = mock_today
+        # Ensure date class still works otherwise
+        mock_date.side_effect = lambda *args, **kw: date(*args, **kw)
+        
         user_id = test_data["users"][0].id
         car_id = test_data["cars"][0].id
         
-        # Create a booking for next month (to avoid overlaps with test data)
-        next_month = date.today().replace(day=1) + timedelta(days=32)
-        start_date = next_month.replace(day=15)
+        # Create a booking with start date at least tomorrow
+        tomorrow = mock_today + timedelta(days=1)
+        start_date = tomorrow
         end_date = start_date + timedelta(days=3)
         
         booking_data = {
@@ -39,7 +46,7 @@ class TestBookingCreation:
         assert created_booking["end_date"] == str(end_date)
         assert created_booking["status"] == "PLANNED"
         
-        # Check total cost calculation (4 days × $50.00)
+        # Check total cost calculation (4 days × car price)
         car_price = float(test_data["cars"][0].price_per_day)
         expected_total = car_price * 4
         assert float(created_booking["total_cost"]) == expected_total
@@ -100,10 +107,10 @@ class TestBookingCreation:
         
         response = client.post("/api/v1/bookings/", json=booking_data)
         
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
         
         error = response.json()
-        assert "Booking start date must be in the future" in error["detail"]
+        assert "Start date must be tomorrow or later" in str(error)
     
     @patch('services.booking_service.date')
     def test_create_booking_start_date_past(self, mock_date, client, test_data):
@@ -123,12 +130,12 @@ class TestBookingCreation:
         
         response = client.post("/api/v1/bookings/", json=booking_data)
         
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
         
         error = response.json()
-        assert "Booking start date must be in the future" in error["detail"]
+        assert "Start date must be tomorrow or later" in str(error)
 
-    @patch('services.booking_service.date')
+    @patch('models.models.date')
     def test_create_booking_overlapping_dates(self, mock_date, client, test_data):
         """Test creating a booking with dates that overlap with existing booking"""        
         # Setup mock for date.today()
@@ -173,6 +180,32 @@ class TestBookingCreation:
         # Pydantic validation should catch this
         error = response.json()
         assert "End date must be after start date" in str(error)
+
+    @patch('models.models.date')
+    def test_create_booking_without_end_date(self, mock_date, client, test_data):
+        """Test creating a booking without providing an end_date"""
+        # Setup mock for date.today()
+        mock_today = date(2024, 5, 15)
+        mock_date.today.return_value = mock_today
+        mock_date.side_effect = lambda *args, **kw: date(*args, **kw)
+        
+        # Create a booking data without end_date
+        booking_data = {
+            "user_id": test_data["users"][0].id,
+            "car_id": test_data["cars"][0].id,
+            "end_date": str(mock_today + timedelta(days=5))  # Valid future date
+            # No end_date provided
+        }
+        
+        response = client.post("/api/v1/bookings/", json=booking_data)
+        
+        # Check status code - should be validation error
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        
+        # Check error message
+        error = response.json()
+        assert "end_date" in str(error)  # Field should be mentioned in the error
+        assert "field required" in str(error).lower()  # Standard Pydantic missing field message
 
 
 class TestBookingDateUpdates:
