@@ -4,7 +4,7 @@ from typing import List
 
 from database import get_db
 from models.db_models import User as UserModel
-from models.models import User
+from models.pydantic.user import User
 
 router = APIRouter(
     prefix="/users",

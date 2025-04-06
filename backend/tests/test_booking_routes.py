@@ -9,7 +9,7 @@ from models.db_models import BookingStatus, Booking
 class TestBookingCreation:
     """Tests related to creating bookings"""
     
-    @patch('models.models.date')
+    @patch('models.pydantic.booking.date')
     def test_create_valid_booking(self, mock_date, client, test_data):
         """Test successfully creating a booking"""
         # Mock today's date
@@ -135,7 +135,7 @@ class TestBookingCreation:
         error = response.json()
         assert "Start date must be tomorrow or later" in str(error)
 
-    @patch('models.models.date')
+    @patch('models.pydantic.booking.date')
     def test_create_booking_overlapping_dates(self, mock_date, client, test_data):
         """Test creating a booking with dates that overlap with existing booking"""        
         # Setup mock for date.today()
@@ -181,7 +181,7 @@ class TestBookingCreation:
         error = response.json()
         assert "End date must be after start date" in str(error)
 
-    @patch('models.models.date')
+    @patch('models.pydantic.booking.date')
     def test_create_booking_without_end_date(self, mock_date, client, test_data):
         """Test creating a booking without providing an end_date"""
         # Setup mock for date.today()

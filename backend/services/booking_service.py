@@ -7,7 +7,7 @@ import exceptions.bookings as booking_exceptions
 from models.db_models import Booking as BookingDB
 from models.db_models import BookingStatus
 from models.db_models import Car as CarDB
-from models.models import BookingCreate, BookingUpdate
+from models.pydantic.booking import BookingCreate, BookingUpdate
 
 
 def create_booking(booking: BookingCreate, db: Session):
