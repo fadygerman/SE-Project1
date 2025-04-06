@@ -83,8 +83,59 @@ class TestBookingCreation:
         error = response.json()
         assert f"Car with ID {unavailable_car_id} is not available" in error["detail"]
 
-    def test_create_booking_overlapping_dates(self, client, test_data):
-        """Test creating a booking with dates that overlap with existing booking"""
+    @patch('services.booking_service.date')
+    def test_create_booking_start_date_today(self, mock_date, client, test_data):
+        # Setup mock for date.today()
+        mock_today = date(2024, 5, 15)
+        mock_date.today.return_value = mock_today
+        # Ensure date class still works otherwise
+        mock_date.side_effect = lambda *args, **kw: date(*args, **kw)
+        
+        booking_data = {
+            "user_id": test_data["users"][0].id,
+            "car_id": test_data["cars"][0].id,
+            "start_date": str(mock_today),     # Today's date
+            "end_date": str(mock_today + timedelta(days=5))
+        }
+        
+        response = client.post("/api/v1/bookings/", json=booking_data)
+        
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        
+        error = response.json()
+        assert "Booking start date must be in the future" in error["detail"]
+    
+    @patch('services.booking_service.date')
+    def test_create_booking_start_date_past(self, mock_date, client, test_data):
+        # Setup mock for date.today()
+        mock_today = date(2024, 5, 15)
+        mock_date.today.return_value = mock_today
+        # Ensure date class still works otherwise
+        mock_date.side_effect = lambda *args, **kw: date(*args, **kw)
+        
+        past_date = mock_today - timedelta(days=3)
+        booking_data = {
+            "user_id": test_data["users"][0].id,
+            "car_id": test_data["cars"][0].id,
+            "start_date": str(past_date),     # Date in the past
+            "end_date": str(mock_today + timedelta(days=5))
+        }
+        
+        response = client.post("/api/v1/bookings/", json=booking_data)
+        
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        
+        error = response.json()
+        assert "Booking start date must be in the future" in error["detail"]
+
+    @patch('services.booking_service.date')
+    def test_create_booking_overlapping_dates(self, mock_date, client, test_data):
+        """Test creating a booking with dates that overlap with existing booking"""        
+        # Setup mock for date.today()
+        mock_today = date(2024, 3, 29)
+        mock_date.today.return_value = mock_today
+        mock_date.side_effect = lambda *args, **kw: date(*args, **kw)
+        
         # Get existing booking dates
         existing_booking = test_data["bookings"][0]
         

@@ -44,6 +44,7 @@ async def create_booking(booking: BookingCreate, db: Session = Depends(get_db)):
     except (
         CarNotAvailableException,
         BookingOverlapException,
+        BookingStartDateException
     ) as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

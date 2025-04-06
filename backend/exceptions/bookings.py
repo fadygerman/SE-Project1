@@ -45,3 +45,7 @@ class ReturnWithoutPickupException(Exception):
 class DateOutsideBookingPeriodException(Exception):
   def __init__(self, date_type: str):
     self.message = f"{date_type} date must be within the booking period"
+
+class BookingStartDateException(Exception):
+  def __init__(self):
+    self.message = "Booking start date must be in the future, not today or in the past"
