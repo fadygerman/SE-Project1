@@ -1,0 +1,20 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-carrentalaws-dev-a7cef-authRole",
+      "UnauthRoleArn": "arn:aws:iam::963865443243:role/amplify-carrentalaws-dev-a7cef-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::963865443243:role/amplify-carrentalaws-dev-a7cef-authRole",
+      "Region": "eu-north-1",
+      "DeploymentBucketName": "amplify-carrentalaws-dev-a7cef-deployment",
+      "UnauthRoleName": "amplify-carrentalaws-dev-a7cef-unauthRole",
+      "StackName": "amplify-carrentalaws-dev-a7cef",
+      "StackId": "arn:aws:cloudformation:eu-north-1:963865443243:stack/amplify-carrentalaws-dev-a7cef/6a6669b0-130b-11f0-9747-0a2707f1ddaf",
+      "AmplifyAppId": "d3u8iv5ewrm0w2"
+    },
+    "categories": {
+      "auth": {
+        "carrentalaws9d557cb2": {}
+      }
+    }
+  }
+}
