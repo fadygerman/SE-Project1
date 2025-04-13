@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from routes.v1 import car_routes, user_routes, booking_routes
+from fastapi.middleware.cors import CORSMiddleware
 
 
 # Initialize FastAPI app
@@ -7,6 +8,18 @@ app = FastAPI(
     title="Car Rental API",
     description="Backend API for Car Rental Application",
     version="0.1.0"
+)
+
+origins = [
+    "http://localhost:5173",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,            # or ["*"] to allow all
+    allow_credentials=True,
+    allow_methods=["*"],              # or restrict to ["GET", "POST", ...]
+    allow_headers=["*"],              # or restrict to specific headers
 )
 
 # Root endpoint

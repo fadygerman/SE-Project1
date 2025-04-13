@@ -10,9 +10,10 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { format } from 'date-fns'
 import { CalendarIcon, Car, IdCardIcon } from 'lucide-react'
 import { useState } from 'react'
-import { cars } from '..'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {useCarIdQuery} from "@/api/cars";
+import {useCreateBookingMutation} from "@/api/bookings";
 
 export const Route = createFileRoute('/cars/$carId/')({
   component: RouteComponent,
@@ -36,10 +37,15 @@ function RouteComponent() {
       alert(`Car booked from ${dateRange.from ? format(dateRange.from, "PPP") : "N/A"} to ${dateRange.to ? format(dateRange.to, "PPP") : "N/A"}`)
       setIsBooking(false)
     }, 2000)
-
+    addBooking.mutate({
+        userId: 1,
+        carId: carId,
+        startDate: dateRange.from,
+        endDate: dateRange.to,
+        })
   }
-  const car = cars.find((car) => car.id === carId)
-
+  const carDetail = useCarIdQuery(carId);
+  const addBooking = useCreateBookingMutation();
   return (
     <div className="container mx-auto p-4">
       <header className="mb-6">
@@ -67,23 +73,23 @@ function RouteComponent() {
                 <Car className="h-24 w-24 text-muted-foreground" />
               </div>
             )} */}
-            <Carousel className="w-full w-2/3 ">
-              <CarouselContent>
-                {car?.images.map((img, index) => (
-                  <CarouselItem key={index}>
-                    <div className="p-1">
-                      <Card>
-                        <CardContent className="flex aspect-square items-center justify-center p-6">
-                          <img src={img} alt="" />
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-              <CarouselPrevious />
-              <CarouselNext />
-            </Carousel>
+            {/*<Carousel className="w-full w-2/3 ">*/}
+            {/*  <CarouselContent>*/}
+            {/*    {car?.images.map((img, index) => (*/}
+            {/*      <CarouselItem key={index}>*/}
+            {/*        <div className="p-1">*/}
+            {/*          <Card>*/}
+            {/*            <CardContent className="flex aspect-square items-center justify-center p-6">*/}
+            {/*              <img src={img} alt="" />*/}
+            {/*            </CardContent>*/}
+            {/*          </Card>*/}
+            {/*        </div>*/}
+            {/*      </CarouselItem>*/}
+            {/*    ))}*/}
+            {/*  </CarouselContent>*/}
+            {/*  <CarouselPrevious />*/}
+            {/*  <CarouselNext />*/}
+            {/*</Carousel>*/}
 
           </div>
 
@@ -93,7 +99,7 @@ function RouteComponent() {
             <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <dt className="text-sm font-medium text-muted-foreground">Model</dt>
-                <dd className="text-lg">carmodel</dd>
+               <dd className="text-lg">{ carDetail?.model }</dd>
               </div>
               <div>
                 <dt className="text-sm font-medium text-muted-foreground">Price</dt>
