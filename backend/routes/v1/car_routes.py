@@ -9,6 +9,7 @@ from exceptions.currencies import InvalidCurrencyException
 from models.currencies import Currency
 from models.pydantic.car import Car
 from services import car_service
+from utils.auth_cognito import get_current_user
 
 router = APIRouter(
     prefix="/cars",
@@ -25,7 +26,8 @@ async def get_cars(
             enum=[currency.value for currency in Currency]
         )
     ] = Currency.USD.value,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)  # Require authentication
 ):
     try:
         return car_service.get_all_cars(db, currency_code)
@@ -46,7 +48,8 @@ async def get_car(
             enum=[currency.value for currency in Currency]
         )
     ] = Currency.USD.value,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)  # Require authentication
 ):
     try:
         return car_service.get_car_by_id(car_id, db, currency_code)
