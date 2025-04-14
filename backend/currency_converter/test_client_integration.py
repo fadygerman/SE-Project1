@@ -81,7 +81,7 @@ def test_integration_convert_currency_wrong_currency_name(client):
     
     wrong_currency_name = 'WRO'
     try:
-        client.service.convert(wrong_currency_name, 'EUR', 100)
+        client.service.convert(wrong_currency_name, 'EUR', Decimal("100.00"))
         pytest.fail("Expected exception was not raised")
     except zeep.exceptions.Fault as e:
         if hasattr(e, 'message'):
@@ -111,7 +111,7 @@ def test_currency_converter_client_get_available_currencies(currency_converter_c
     assert available_currencies is not None
     
 def test_currency_convert_client_convert(currency_converter_client):
-    result = currency_converter_client.convert('USD', 'EUR', 100)
+    result = currency_converter_client.convert('USD', 'EUR', Decimal("100.00"))
     assert result is not None
     assert isinstance(result, Decimal)
     assert result > 0
