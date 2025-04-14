@@ -5,7 +5,7 @@ are used to validate incoming data, serialize outgoing data,
 and define the structure of the data used in the application.
 '''
 
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 from enum import Enum
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
@@ -95,9 +95,25 @@ class BookingCreate(BaseModel):
     start_date: date = Field(description="Start date of the booking period")
     end_date: date = Field(description="End date of the booking period")
     
+    @field_validator('start_date')
+    @classmethod
+    def validate_start_date(cls, start_date):
+        if start_date is None:
+            raise ValueError('Start date is required')
+        
+        # Ensure start_date is at least tomorrow (today + 1 day)
+        tomorrow = date.today() + timedelta(days=1)
+        if start_date < tomorrow:
+            raise ValueError('Start date must be tomorrow or later')
+        
+        return start_date
+    
     @field_validator('end_date')
     @classmethod
-    def validate_dates(cls, end_date, info):
+    def validate_end_date(cls, end_date, info):
+        if end_date is None:
+            raise ValueError('End date is required')
+            
         start_date = info.data.get('start_date')
         if start_date and end_date < start_date:
             raise ValueError('End date must be after start date')

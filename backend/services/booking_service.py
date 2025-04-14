@@ -1,9 +1,14 @@
-from decimal import Decimal
-import exceptions.bookings as booking_exceptions
-from models.db_models import Booking as BookingDB, Car as CarDB, BookingStatus
-from models.models import BookingCreate, BookingUpdate
-from sqlalchemy.orm import Session
 from datetime import date
+from decimal import Decimal
+
+from sqlalchemy.orm import Session
+
+import exceptions.bookings as booking_exceptions
+from models.db_models import Booking as BookingDB
+from models.db_models import BookingStatus
+from models.db_models import Car as CarDB
+from models.models import BookingCreate, BookingUpdate
+
 
 def create_booking(booking: BookingCreate, db: Session):
   car = db.query(CarDB).filter(CarDB.id == booking.car_id).first()
@@ -48,17 +53,18 @@ def update_booking(booking_id: int, booking_update: BookingUpdate, db: Session):
     # Apply all validations
     handle_status_transitions(booking, update_data)
     
-    if validate_date_ordering(booking, update_data, 'start_date', 'end_date'):
+    start_date, end_date = get_updated_booking_period(booking, update_data)
+    if not is_date_ordering_valid(start_date, end_date):
         raise booking_exceptions.DateRangeException()
 
-    start_date, end_date = get_booking_period(booking, update_data)
     if does_bookings_overlap(booking.car_id, start_date, end_date, db, booking.id):
         raise booking_exceptions.BookingOverlapUpdateException()
 
     price_per_day = db.query(CarDB.price_per_day).filter(CarDB.id == booking.car_id).scalar()
     update_data['total_cost'] = calculate_total_cost(price_per_day, start_date, end_date)
 
-    if validate_date_ordering(booking, update_data, 'pickup_date', 'return_date'):
+    pickup_date, return_date = get_updated_usage_period(booking, update_data)
+    if not is_date_ordering_valid(pickup_date, return_date):
         raise booking_exceptions.PickupAfterReturnException()
 
     handle_pickup_date_validations(booking, update_data)
@@ -126,28 +132,16 @@ def handle_status_transitions(booking: BookingDB, update_data: dict):
         if 'return_date' not in update_data:
             update_data['return_date'] = date.today()
 
-def validate_date_ordering(booking: BookingDB, update_data: dict, start_date_field: str, end_date_field: str):
-    """ Generic date validation function that ensures one date comes before another. """
-    # Case 1: Both dates are being updated
-    if start_date_field in update_data and end_date_field in update_data:
-        return update_data[end_date_field] < update_data[start_date_field]
-    
-    # Case 2: Only second date is updated, check against existing first date
-    elif end_date_field in update_data and getattr(booking, start_date_field, None):
-        return update_data[end_date_field] < getattr(booking, start_date_field)
-    
-    # Case 3: Only first date is updated, check against existing second date
-    elif start_date_field in update_data and getattr(booking, end_date_field, None):
-        return getattr(booking, end_date_field) < update_data[start_date_field]
-    
-    return False
+def is_date_ordering_valid(start_date: date | None, end_date: date | None):
+    if start_date is None or end_date is None:
+        return True
+    return start_date <= end_date
 
 def handle_pickup_date_validations(booking: BookingDB, update_data: dict):
     """Handle all validations for pickup date"""
     if 'pickup_date' not in update_data:
         return
         
-    # 1. Validate pickup_date can't be in the future
     if is_date_after_today(update_data['pickup_date']):
         raise booking_exceptions.FutureDateException("Pickup")
     
@@ -156,7 +150,7 @@ def handle_pickup_date_validations(booking: BookingDB, update_data: dict):
         update_data['status'] = BookingStatus.ACTIVE
     
     # 3. Ensure pickup_date is within booking period
-    start_date, end_date = get_booking_period(booking, update_data)
+    start_date, end_date = get_updated_booking_period(booking, update_data)
     if not is_date_within_period(update_data['pickup_date'], start_date, end_date):
         raise booking_exceptions.DateOutsideBookingPeriodException("Pickup")
 
@@ -181,7 +175,7 @@ def handle_return_date_validations(booking: BookingDB, update_data: dict):
         raise booking_exceptions.ReturnWithoutPickupException()
     
     # 4. Ensure return_date is within booking period (with OVERDUE exception)
-    start_date, end_date = get_booking_period(booking, update_data)
+    start_date, end_date = get_updated_booking_period(booking, update_data)
     allow_outside = booking.status == BookingStatus.OVERDUE
     if not is_date_within_period(update_data['return_date'], start_date, end_date, allow_outside):
         raise booking_exceptions.DateOutsideBookingPeriodException("Return")
@@ -189,12 +183,18 @@ def handle_return_date_validations(booking: BookingDB, update_data: dict):
 def is_date_after_today(date_value):
     return date_value > date.today()
 
-def get_booking_period(booking, update_data):
+def get_updated_booking_period(booking, update_data):
     """Get the booking start and end dates, accounting for updates"""
     start_date = update_data.get('start_date', booking.start_date)
     end_date = update_data.get('end_date', booking.end_date)
     return start_date, end_date
 
+def get_updated_usage_period(booking, update_data):
+    """Get the booking start and end dates, accounting for updates"""
+    start_date = update_data.get('pickup_date', booking.pickup_date)
+    end_date = update_data.get('return_date', booking.return_date)
+    return start_date, end_date
+ 
 def is_date_within_period(date_value: date, start_date: date, end_date: date, allow_outside=False):
     """Validate that a date is within a period, with optional exception"""
     return date_value >= start_date and (date_value <= end_date or allow_outside)
