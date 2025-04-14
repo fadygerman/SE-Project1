@@ -25,11 +25,11 @@ class CurrencyConverterClient:
     def convert(self, from_currency: str, to_currency: str, amount: Decimal) -> Decimal:
         price_in_cent = int(amount * 100)
         converted_price_in_cent = self.client.service.convert(from_currency, to_currency, price_in_cent)
-        return Decimal(converted_price_in_cent) / Decimal('100')
+        return (Decimal(converted_price_in_cent) / Decimal('100')).quantize(Decimal('0.00'))
     
     def get_currency_rate(self, from_currency: str, to_currency: str) -> Decimal:
         currency_rate_in_cent = self.client.service.convert(from_currency, to_currency, 100)
-        return Decimal(currency_rate_in_cent) / Decimal('100')
+        return (Decimal(currency_rate_in_cent) / Decimal('100')).quantize(Decimal('0.00'))
 
 def get_jwt_token() -> str:
         dotenv.load_dotenv()
