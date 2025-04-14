@@ -12,7 +12,9 @@ class TestBookingCreation:
     
     @patch('models.pydantic.booking.date')
     def test_create_valid_booking(self, mock_date, client, test_data):
-        """Test successfully creating a booking"""
+        """Test successfully creating a booking
+        ATTENTION: Currency converter must be running to pass this test
+        """
         # Mock today's date
         mock_today = date(2024, 3, 15)
         mock_date.today.return_value = mock_today
