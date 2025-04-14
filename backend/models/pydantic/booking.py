@@ -3,10 +3,11 @@ from decimal import Decimal
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, Field, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from models.pydantic.car import Car
 from models.pydantic.user import User
+
 
 class BookingStatus(str, Enum):
     PLANNED = "PLANNED"
@@ -80,14 +81,6 @@ class BookingCreate(BaseModel):
         if start_date and end_date < start_date:
             raise ValueError('End date must be after start date')
         return end_date
-    
-    @field_validator('planned_pickup_time')
-    @classmethod
-    def validate_planned_pickup_time(cls, planned_pickup_time):
-        if planned_pickup_time is None:
-            raise ValueError('Planned pickup time is required')
-        # Time is treated as UTC time without timezone information
-        return planned_pickup_time
     
 class BookingUpdate(BaseModel):
     start_date: Optional[date] = Field(None, description="Updated start date")
