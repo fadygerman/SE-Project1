@@ -6,7 +6,7 @@ To run this script, execute the following command in the terminal:
 > python db_seed.py
 '''
 
-from datetime import date
+from datetime import date, time
 from decimal import Decimal
 
 from database import SessionLocal, engine
@@ -112,6 +112,7 @@ def seed_data():
             end_date=date(2025, 4, 5),
             pickup_date=None,  # Will be set when user picks up the car
             return_date=None,  # Will be set when user returns the car
+            planned_pickup_time=time(10, 30),  # 10:30 AM (UTC)
             total_cost=Decimal("375.0"),
             status=BookingStatus.PLANNED
         ),
@@ -122,6 +123,7 @@ def seed_data():
             end_date=date(2025, 3, 20),
             pickup_date=date(2025, 3, 15),
             return_date=date(2025, 3, 20),
+            planned_pickup_time=time(14, 0),  # 2:00 PM (UTC)
             total_cost=Decimal("225.0"),
             status=BookingStatus.COMPLETED
         )

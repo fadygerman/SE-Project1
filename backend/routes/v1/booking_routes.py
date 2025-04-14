@@ -4,7 +4,7 @@ from typing import List
 
 from database import get_db
 from models.db_models import Booking as BookingDB
-from models.models import Booking, BookingCreate, BookingUpdate
+from models.pydantic.booking import Booking, BookingCreate, BookingUpdate
 
 from services import booking_service
 from exceptions.bookings import *

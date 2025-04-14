@@ -4,7 +4,7 @@ from typing import List
 
 from database import get_db
 from models.db_models import Car as CarDB
-from models.models import Car
+from models.pydantic.car import Car
 
 router = APIRouter(
     prefix="/cars",
