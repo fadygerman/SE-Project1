@@ -35,6 +35,7 @@ class UserRegister(BaseModel):
     email: EmailStr = Field(description="User's email address")
     phone_number: str = Field(description="User's phone number")
     password: str = Field(description="User's password", min_length=8)
+    cognito_id: str = Field(description="AWS Cognito user ID (sub claim)")
     
     @field_validator('phone_number')
     @classmethod
