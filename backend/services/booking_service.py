@@ -1,9 +1,14 @@
-from decimal import Decimal
-import exceptions.bookings as booking_exceptions
-from models.db_models import Booking as BookingDB, Car as CarDB, BookingStatus
-from models.models import BookingCreate, BookingUpdate
-from sqlalchemy.orm import Session
 from datetime import date
+from decimal import Decimal
+
+from sqlalchemy.orm import Session
+
+import exceptions.bookings as booking_exceptions
+from models.db_models import Booking as BookingDB
+from models.db_models import BookingStatus
+from models.db_models import Car as CarDB
+from models.models import BookingCreate, BookingUpdate
+
 
 def create_booking(booking: BookingCreate, db: Session):
   car = db.query(CarDB).filter(CarDB.id == booking.car_id).first()
@@ -130,7 +135,7 @@ def handle_status_transitions(booking: BookingDB, update_data: dict):
 def is_date_ordering_valid(start_date: date | None, end_date: date | None):
     if start_date is None or end_date is None:
         return True
-    return start_date < end_date
+    return start_date <= end_date
 
 def handle_pickup_date_validations(booking: BookingDB, update_data: dict):
     """Handle all validations for pickup date"""
