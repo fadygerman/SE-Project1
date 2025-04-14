@@ -239,6 +239,26 @@ class TestBookingCreation:
         assert "planned_pickup_time" in str(error)  # Field should be mentioned in the error
         assert "field required" in str(error).lower()  # Standard Pydantic missing field message
 
+    def test_create_booking_with_invalid_pickup_time_format(self, client, test_data):
+        """Test creating a booking with an invalid planned_pickup_time format"""
+        booking_data = {
+            "user_id": test_data["users"][0].id,
+            "car_id": test_data["cars"][0].id,
+            "start_date": str(date.today() + timedelta(days=5)),
+            "end_date": str(date.today() + timedelta(days=10)),
+            "planned_pickup_time": "10:30 AM"  # Invalid format (should be HH:MM:SS)
+        }
+        
+        response = client.post("/api/v1/bookings/", json=booking_data)
+        
+        # Check status code - should be validation error
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        
+        # Check error message
+        error = response.json()
+        assert "planned_pickup_time" in str(error)  # Field should be mentioned
+        assert "invalid" in str(error).lower()  # Should mention invalid format
+
 
 class TestBookingDateUpdates:
     """Tests related to updating booking dates"""
