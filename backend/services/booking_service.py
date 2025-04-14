@@ -4,6 +4,8 @@ from decimal import Decimal
 from sqlalchemy.orm import Session
 
 import exceptions.bookings as booking_exceptions
+from currency_converter.client import CurrencyConverterClient, get_currency_converter_client_instance
+from models.currencies import Currency
 from models.db_models import Booking as BookingDB
 from models.db_models import BookingStatus
 from models.db_models import Car as CarDB
@@ -23,6 +25,9 @@ def create_booking(booking: BookingCreate, db: Session):
   
   total_cost = calculate_total_cost(car.price_per_day, booking.start_date, booking.end_date)
   
+  currency_converter_client = get_currency_converter_client_instance()
+  exchange_rate = currency_converter_client.get_currency_rate('USD', booking.currency_code.value)
+  
   new_booking = BookingDB(
       user_id=booking.user_id,
       car_id=booking.car_id,
@@ -30,6 +35,8 @@ def create_booking(booking: BookingCreate, db: Session):
       end_date=booking.end_date,
       planned_pickup_time=booking.planned_pickup_time,  # Store time in UTC (without timezone)
       total_cost=total_cost,
+      currency_code=booking.currency_code,
+      exchange_rate=exchange_rate,
       status=BookingStatus.PLANNED
   )
 
@@ -93,7 +100,11 @@ def does_bookings_overlap(car_id: int, start_date: date, end_date: date, db: Ses
 def calculate_booking_duration(start_date: date, end_date: date):
     """Calculate booking duration in days"""
     return (end_date - start_date).days + 1
-  
+
+def get_car_price_in_currency(car_price: Decimal, to_currency: str) -> Decimal:
+    currency_converter_client = get_currency_converter_client_instance()
+    return currency_converter_client.convert('USD', to_currency, car_price)
+
 def calculate_total_cost(car_price: Decimal, start_date: date, end_date: date): 
     """Calculate total cost based on car price and booking duration"""   
     booking_duration = calculate_booking_duration(start_date, end_date)

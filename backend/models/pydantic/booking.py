@@ -5,6 +5,7 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from models.currencies import Currency
 from models.pydantic.car import Car
 from models.pydantic.user import User
 
@@ -26,6 +27,8 @@ class Booking(BaseModel):
     pickup_date: Optional[date] = Field(None, description="Actual date when car was picked up")
     return_date: Optional[date] = Field(None, description="Actual date when car was returned")
     total_cost: Decimal = Field(description="Total cost of the booking", gt=0)
+    currency_code: Currency = Field(description="Currency code of the booking")
+    exchange_rate: Decimal = Field(description="Exchange rate of the booking")
     status: BookingStatus = Field(description="Current status of the booking")
     
     # Optional nested objects for full data retrieval
@@ -57,6 +60,7 @@ class BookingCreate(BaseModel):
     start_date: date = Field(description="Start date of the booking period")
     end_date: date = Field(description="End date of the booking period")
     planned_pickup_time: time = Field(description="Time when the car will be picked up on start_date (UTC time)")
+    currency_code: Currency = Field(description="Currency code of the booking")
     
     @field_validator('start_date')
     @classmethod

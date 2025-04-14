@@ -1,5 +1,4 @@
 from datetime import date, timedelta
-from decimal import Decimal
 from unittest.mock import patch
 
 import pytest
@@ -33,7 +32,8 @@ class TestBookingCreation:
             "car_id": car_id,
             "start_date": str(start_date),
             "end_date": str(end_date),
-            "planned_pickup_time": "10:00:00"
+            "planned_pickup_time": "10:00:00",
+            "currency_code": "EUR",
         }
         
         response = client.post("/api/v1/bookings/", json=booking_data)
@@ -48,11 +48,14 @@ class TestBookingCreation:
         assert created_booking["start_date"] == str(start_date)
         assert created_booking["end_date"] == str(end_date)
         assert created_booking["status"] == "PLANNED"
+        assert created_booking["currency_code"] == "EUR"
+        assert created_booking["exchange_rate"] is not None
         
         # Check total cost calculation (4 days × car price)
         car_price = float(test_data["cars"][0].price_per_day)
         expected_total = car_price * 4
         assert float(created_booking["total_cost"]) == expected_total
+
 
     def test_create_booking_car_not_found(self, client, test_data):
         """Test creating a booking with non-existent car ID"""
@@ -61,7 +64,8 @@ class TestBookingCreation:
             "car_id": 999,  # Non-existent car ID
             "start_date": "2025-06-01",
             "end_date": "2025-06-05",
-            "planned_pickup_time": "09:30:00"
+            "planned_pickup_time": "09:30:00",
+            "currency_code": "USD",
         }
         
         response = client.post("/api/v1/bookings/", json=booking_data)
@@ -83,7 +87,8 @@ class TestBookingCreation:
             "car_id": unavailable_car_id,
             "start_date": "2025-06-01",
             "end_date": "2025-06-05",
-            "planned_pickup_time": "14:00:00"
+            "planned_pickup_time": "14:00:00",
+            "currency_code": "USD",
         }
         
         response = client.post("/api/v1/bookings/", json=booking_data)
@@ -108,7 +113,8 @@ class TestBookingCreation:
             "car_id": test_data["cars"][0].id,
             "start_date": str(mock_today),     # Today's date
             "end_date": str(mock_today + timedelta(days=5)),
-            "planned_pickup_time": "12:00:00"
+            "planned_pickup_time": "12:00:00",
+            "currency_code": "USD",
         }
         
         response = client.post("/api/v1/bookings/", json=booking_data)
@@ -132,7 +138,8 @@ class TestBookingCreation:
             "car_id": test_data["cars"][0].id,
             "start_date": str(past_date),     # Date in the past
             "end_date": str(mock_today + timedelta(days=5)),
-            "planned_pickup_time": "11:30:00"
+            "planned_pickup_time": "11:30:00",
+            "currency_code": "USD",
         }
         
         response = client.post("/api/v1/bookings/", json=booking_data)
@@ -159,7 +166,8 @@ class TestBookingCreation:
             "car_id": existing_booking.car_id,
             "start_date": str(existing_booking.start_date),  # Same start date
             "end_date": str(existing_booking.end_date + timedelta(days=5)),  # Extended end date
-            "planned_pickup_time": "10:30:00"
+            "planned_pickup_time": "10:30:00",
+            "currency_code": "USD",
         }
         
         response = client.post("/api/v1/bookings/", json=booking_data)
@@ -178,7 +186,8 @@ class TestBookingCreation:
             "car_id": test_data["cars"][0].id,
             "start_date": "2025-06-05",  # Later date
             "end_date": "2025-06-01",     # Earlier date
-            "planned_pickup_time": "10:30:00"
+            "planned_pickup_time": "10:30:00",
+            "currency_code": "USD",
         }
         
         response = client.post("/api/v1/bookings/", json=booking_data)
@@ -203,9 +212,9 @@ class TestBookingCreation:
             "user_id": test_data["users"][0].id,
             "car_id": test_data["cars"][0].id,
             "start_date": str(mock_today + timedelta(days=5)),  # Valid future date
-            "planned_pickup_time": "10:30:00"
+            "planned_pickup_time": "10:30:00",
             # No end_date provided
-            
+            "currency_code": "USD",
         }
         
         response = client.post("/api/v1/bookings/", json=booking_data)
@@ -225,8 +234,9 @@ class TestBookingCreation:
             "user_id": test_data["users"][0].id,
             "car_id": test_data["cars"][0].id,
             "start_date": str(date.today() + timedelta(days=5)),  # Valid future date
-            "end_date": str(date.today() + timedelta(days=10))
+            "end_date": str(date.today() + timedelta(days=10)),
             # No planned_pickup_time provided
+            "currency_code": "USD",
         }
         
         response = client.post("/api/v1/bookings/", json=booking_data)

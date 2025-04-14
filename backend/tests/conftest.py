@@ -1,13 +1,15 @@
+from datetime import date, time
+from decimal import Decimal
+
 import pytest
+from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from fastapi.testclient import TestClient
-from decimal import Decimal
-from datetime import date, time
 
-from main import app
 from database import get_db
-from models.db_models import User, Car, Booking, BookingStatus, Base
+from main import app
+from models.currencies import Currency
+from models.db_models import Base, Booking, BookingStatus, Car, User
 
 # Create test database
 SQLALCHEMY_TEST_DATABASE_URL = "sqlite:///./test.db"
@@ -103,6 +105,8 @@ def test_data(test_db):
         pickup_date=None,
         return_date=None,
         total_cost=Decimal("200.00"),
+        exchange_rate=Decimal("1.00"),
+        currency_code=Currency.USD,
         status=BookingStatus.PLANNED
     )
     
@@ -115,6 +119,8 @@ def test_data(test_db):
         pickup_date=date(2024, 5, 1),
         return_date=None,
         total_cost=Decimal("150.00"),
+        exchange_rate=Decimal("0.88"),
+        currency_code=Currency.EUR,
         status=BookingStatus.ACTIVE
     )
     
