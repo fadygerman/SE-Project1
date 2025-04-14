@@ -53,7 +53,6 @@ def test_data(test_db):
         last_name="User1",
         email="testuser1@example.com",
         phone_number="+1234567890",
-        password_hash="hash1",
         cognito_id="cognito1"
     )
     
@@ -62,7 +61,6 @@ def test_data(test_db):
         last_name="User2",
         email="testuser2@example.com",
         phone_number="+0987654321",
-        password_hash="hash2",
         cognito_id="cognito2"
     )
     

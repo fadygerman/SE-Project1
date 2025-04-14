@@ -16,7 +16,7 @@ class User(BaseModel):
     last_name: str = Field(description="User's last name", min_length=1, max_length=50) 
     email: EmailStr = Field(description="User's email address")
     phone_number: str = Field(description="User's phone number")
-    password_hash: Optional[str] = Field(None, description="Hashed password (internal use only)", exclude=True)
+    cognito_id: str = Field(description="AWS Cognito user ID")
     
     model_config = ConfigDict(from_attributes=True)
     
@@ -34,7 +34,6 @@ class UserRegister(BaseModel):
     last_name: str = Field(description="User's last name", min_length=1, max_length=50)
     email: EmailStr = Field(description="User's email address")
     phone_number: str = Field(description="User's phone number")
-    password: str = Field(description="User's password", min_length=8)
     cognito_id: str = Field(description="AWS Cognito user ID (sub claim)")
     
     @field_validator('phone_number')
@@ -42,12 +41,4 @@ class UserRegister(BaseModel):
     def validate_phone(cls, v):
         if not v or len(v) < 8:
             raise ValueError('Phone number must be at least 8 characters')
-        return v
-    
-    @field_validator('password')
-    @classmethod
-    def validate_password(cls, v):
-        if len(v) < 8:
-            raise ValueError('Password must be at least 8 characters')
-        # Add more password validation as needed (special chars, numbers, etc.)
         return v

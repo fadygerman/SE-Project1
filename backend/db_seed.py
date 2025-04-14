@@ -35,14 +35,14 @@ def seed_data():
             last_name="Doe", 
             email="john.doe@example.com", 
             phone_number="+14155552671", 
-            password_hash="$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW"  # "password"
+            cognito_id="cognito_sample_id_1"  # Sample Cognito ID
         ),
         User(
             first_name="Jane", 
             last_name="Smith", 
             email="jane.smith@example.com", 
             phone_number="+14155552672", 
-            password_hash="$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW"
+            cognito_id="cognito_sample_id_2"  # Sample Cognito ID
         )
     ]
     
