@@ -10,7 +10,9 @@ from datetime import date, time
 from decimal import Decimal
 
 from database import SessionLocal, engine
-from models.db_models import User, Car, Booking, BookingStatus, Base
+from models.currencies import Currency
+from models.db_models import Base, Booking, BookingStatus, Car, User
+
 
 # Create all tables in the database
 def init_db():
@@ -114,6 +116,8 @@ def seed_data():
             return_date=None,  # Will be set when user returns the car
             planned_pickup_time=time(10, 30),  # 10:30 AM (UTC)
             total_cost=Decimal("375.0"),
+            currency_code=Currency.USD,
+            exchange_rate=Decimal("1.00"),
             status=BookingStatus.PLANNED
         ),
         Booking(
@@ -125,6 +129,8 @@ def seed_data():
             return_date=date(2025, 3, 20),
             planned_pickup_time=time(14, 0),  # 2:00 PM (UTC)
             total_cost=Decimal("225.0"),
+            currency_code=Currency.USD,
+            exchange_rate=Decimal("1.00"),
             status=BookingStatus.COMPLETED
         )
     ]

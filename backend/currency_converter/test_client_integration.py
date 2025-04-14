@@ -1,8 +1,12 @@
-import pytest
 import os
+from decimal import Decimal
+
 import dotenv
-from currency_converter.client import get_jwt_token, get_currency_converter_client
+import pytest
 import zeep.exceptions
+
+from currency_converter.client import CurrencyConverterClient, get_currency_converter_client, get_jwt_token
+
 
 @pytest.fixture(scope="session", autouse=True)
 def load_env():
@@ -25,6 +29,10 @@ def client(jwt_token):
 @pytest.fixture(scope="session")
 def currency_converter_client_fake_token():
     return get_currency_converter_client("fake-token")
+
+@pytest.fixture(scope="session")
+def currency_converter_client():
+    return CurrencyConverterClient()
 
 def test_get_jwt_token_integration(check_credentials):
     """Integration test for get_jwt_token function.
@@ -97,3 +105,19 @@ def test_integration_get_available_currencies(client):
     common_currencies = ['USD', 'EUR', 'GBP', 'JPY']
     for currency in common_currencies:
         assert currency in currencies, f"{currency} should be in the list of available currencies"
+
+def test_currency_converter_client_get_available_currencies(currency_converter_client):
+    available_currencies = currency_converter_client.get_available_currencies()
+    assert available_currencies is not None
+    
+def test_currency_convert_client_convert(currency_converter_client):
+    result = currency_converter_client.convert('USD', 'EUR', 100)
+    assert result is not None
+    assert isinstance(result, Decimal)
+    assert result > 0
+
+def test_currency_converter_client_get_currency_rate(currency_converter_client):
+    result = currency_converter_client.get_currency_rate('USD', 'EUR')
+    assert result is not None
+    assert isinstance(result, Decimal)
+    assert result > 0
