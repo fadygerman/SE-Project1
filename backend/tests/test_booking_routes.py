@@ -193,7 +193,7 @@ class TestBookingCreation:
         booking_data = {
             "user_id": test_data["users"][0].id,
             "car_id": test_data["cars"][0].id,
-            "end_date": str(mock_today + timedelta(days=5))  # Valid future date
+            "start_date": str(mock_today + timedelta(days=5))  # Valid future date
             # No end_date provided
         }
         
