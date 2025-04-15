@@ -575,6 +575,56 @@ class TestBookingRetrieval:
         bookings = response.json()
         for booking in bookings:
             assert booking["user_id"] == test_data["users"][0].id
+        
+        # Check if we have the expected number of bookings
+        # In our test data, user 1 has one booking
+        user1_bookings = [b for b in test_data["bookings"] if b.user_id == test_data["users"][0].id]
+        assert len(bookings) == len(user1_bookings)
+        
+        # Verify that the returned booking IDs match our expected bookings
+        booking_ids = [booking["id"] for booking in bookings]
+        expected_ids = [b.id for b in user1_bookings]
+        assert set(booking_ids) == set(expected_ids)
+        
+    def test_get_my_bookings_empty(self, client, test_data, test_db):
+        """Test getting bookings when user has no bookings"""
+        # Create a user with no bookings
+        from models.db_models import User
+        user3 = User(
+            first_name="No",
+            last_name="Bookings",
+            email="nobookings@example.com",
+            phone_number="+5555555555",
+            cognito_id="cognito3"
+        )
+        test_db.add(user3)
+        test_db.commit()
+        test_db.refresh(user3)
+        
+        # Create a fixture that authenticates as this new user
+        async def override_get_current_user():
+            return user3
+        
+        # Store original overrides
+        original_overrides = app.dependency_overrides.copy()
+        
+        # Set the test user to our new user with no bookings
+        from utils.auth_cognito import get_current_user
+        app.dependency_overrides[get_current_user] = override_get_current_user
+        
+        try:
+            response = client.get("/api/v1/bookings/my-bookings")
+            
+            # Check status code
+            assert response.status_code == status.HTTP_200_OK
+            
+            # Should return empty list
+            bookings = response.json()
+            assert isinstance(bookings, list)
+            assert len(bookings) == 0
+        finally:
+            # Restore original overrides
+            app.dependency_overrides = original_overrides
             
     def test_get_booking_by_id(self, auth_client, test_data):
         """Test getting a booking by ID"""        
