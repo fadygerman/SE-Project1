@@ -7,6 +7,13 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from models.db_models import User
+from exceptions.auth import (
+    InvalidTokenException, 
+    MissingUserIdentifierException, 
+    UserNotRegisteredException,
+    AuthenticationFailedException,
+    IncompleteUserDataException
+)
 
 # Cognito configuration
 COGNITO_REGION = os.getenv("COGNITO_REGION", "eu-north-1")
@@ -42,10 +49,10 @@ def verify_cognito_jwt(token: str):
         )
         return payload
     except Exception as e:
-        # Detailed error for debugging
+        # Generic error message that doesn't expose internal details
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Invalid or expired token: {str(e)}"
+            detail="Invalid or expired token"
         )
 
 async def get_current_user(
@@ -59,10 +66,7 @@ async def get_current_user(
         # Get user info from payload
         cognito_id = payload.get("sub")
         if not cognito_id:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token: Missing user identifier"
-            )
+            raise MissingUserIdentifierException()
         
         # Find user by Cognito ID
         user = db.query(User).filter(User.cognito_id == cognito_id).first()
@@ -70,10 +74,7 @@ async def get_current_user(
             # Extract email from payload
             email = payload.get("email")
             if not email:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="User not registered in the system"
-                )
+                raise UserNotRegisteredException()
             
             # Extract user details from token
             given_name = payload.get('given_name', '')
@@ -82,22 +83,13 @@ async def get_current_user(
             
             # Check if all required data is present
             if not given_name or len(given_name) < 1:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="User authenticated with Cognito but first_name is missing. Please complete registration."
-                )
+                raise IncompleteUserDataException("first_name")
                 
             if not family_name or len(family_name) < 1:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="User authenticated with Cognito but last_name is missing. Please complete registration."
-                )
+                raise IncompleteUserDataException("last_name")
                 
             if not phone or len(phone) < 8:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="User authenticated with Cognito but valid phone_number is missing. Please complete registration."
-                )
+                raise IncompleteUserDataException("phone_number")
             
             # Create new user entry with validated data
             user = User(
@@ -114,10 +106,25 @@ async def get_current_user(
         return user
     except HTTPException:
         raise
+    except MissingUserIdentifierException as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=e.message
+        )
+    except UserNotRegisteredException as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=e.message
+        )
+    except IncompleteUserDataException as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=e.message
+        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Authentication failed: {str(e)}"
+            detail="Authentication failed"
         )
 
 # Role-based access control (placeholder implementation)
