@@ -28,3 +28,17 @@ class IncompleteUserDataException(Exception):
         self.missing_field = missing_field
         self.message = f"User authenticated with Cognito but {missing_field} is missing or invalid. Please complete registration."
         super().__init__(self.message)
+
+class UnauthorizedException(Exception):
+    """Exception raised for unauthorized access"""
+    def __init__(self, detail="Unauthorized"):
+        self.detail = detail
+        self.message = detail
+        super().__init__(self.message)
+
+class ForbiddenException(Exception):
+    """Exception raised for forbidden access (authenticated but lacking permissions)"""
+    def __init__(self, detail="Forbidden"):
+        self.detail = detail
+        self.message = detail
+        super().__init__(self.message)

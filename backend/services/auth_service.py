@@ -1,64 +1,28 @@
-import os
-import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from jwt import PyJWKClient
 from sqlalchemy.orm import Session
 
 from database import get_db
 from models.db_models import User
 from exceptions.auth import (
-    InvalidTokenException, 
     MissingUserIdentifierException, 
     UserNotRegisteredException,
-    AuthenticationFailedException,
     IncompleteUserDataException
 )
+from services.cognito_service import verify_cognito_jwt
 
-# Cognito configuration
-COGNITO_REGION = os.getenv("COGNITO_REGION", "eu-north-1")
-COGNITO_USER_POOL_ID = os.getenv("COGNITO_USER_POOL_ID", "eu-north-1_3cYMEI8RB")
-COGNITO_CLIENT_ID = os.getenv("COGNITO_CLIENT_ID", "2mjf5mmb10to1g4pqrgurnumql")
-
-# JWKS URL
-JWKS_URL = f"https://cognito-idp.{COGNITO_REGION}.amazonaws.com/{COGNITO_USER_POOL_ID}/.well-known/jwks.json"
-
+# Security scheme for JWT Bearer tokens
 security = HTTPBearer()
-
-def verify_cognito_jwt(token: str):
-    """Verify a JWT token from AWS Cognito"""
-    try:
-        # Create JWKS client with proper timeout
-        jwk_client = PyJWKClient(JWKS_URL, timeout=10)
-        
-        # Get signing key
-        signing_key = jwk_client.get_signing_key_from_jwt(token)
-        
-        # Decode and verify token
-        payload = jwt.decode(
-            token,
-            signing_key.key,
-            algorithms=["RS256"],
-            options={
-                "verify_exp": True,
-                "verify_aud": False,  # Don't verify audience for access tokens
-                "verify_iss": True,   # But do verify issuer
-            },
-            # Issuer should match your Cognito user pool
-            issuer=f"https://cognito-idp.{COGNITO_REGION}.amazonaws.com/{COGNITO_USER_POOL_ID}"
-        )
-        return payload
-    except Exception as e:
-        # Generic error message that doesn't expose internal details
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token"
-        )
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db)
 ):
+    """
+    Get the current authenticated user based on the JWT token.
+    If the user doesn't exist in the database but is authenticated with Cognito,
+    create a new user record.
+    """
     try:
         token = credentials.credentials
         payload = verify_cognito_jwt(token)
@@ -127,7 +91,7 @@ async def get_current_user(
             detail="Authentication failed"
         )
 
-# Role-based access control (placeholder implementation)
+# Role-based access control
 def require_role(allowed_roles):
     """Check if user has one of the required roles"""
     async def role_checker(user: User = Depends(get_current_user)):
