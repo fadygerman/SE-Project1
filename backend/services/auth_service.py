@@ -1,17 +1,13 @@
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from jwt import PyJWTError
-from sqlalchemy.orm import Session
 import logging
 
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jwt import PyJWTError
+from sqlalchemy.orm import Session
+
 from database import get_db
-from models.db_models import User, UserRole
-from exceptions.auth import (
-    MissingUserIdentifierException, 
-    UserNotRegisteredException,
-    IncompleteUserDataException,
-    InvalidTokenException
-)
+from exceptions.auth import IncompleteUserDataException, InvalidTokenException, MissingUserIdentifierException, UserNotRegisteredException
+from models.db_models import User
 from services.cognito_service import verify_cognito_jwt
 
 # Security scheme for JWT Bearer tokens
@@ -117,28 +113,3 @@ def require_role(allowed_roles):
             detail=f"Access denied. Required role: {', '.join(role_names)}"
         )
     return role_checker
-
-async def get_booking_with_permission_check(
-    booking_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Check if the user has permission to access the specified booking"""
-    from models.db_models import Booking as BookingDB
-    
-    booking = db.query(BookingDB).filter(BookingDB.id == booking_id).first()
-    
-    if booking is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Booking with ID {booking_id} not found"
-        )
-    
-    # Check if it's the user's booking or if they have admin role
-    if booking.user_id != current_user.id and current_user.role != UserRole.ADMIN:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, 
-            detail="You can only access your own bookings"
-        )
-    
-    return booking

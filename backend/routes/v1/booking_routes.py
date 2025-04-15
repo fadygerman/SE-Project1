@@ -10,7 +10,8 @@ from models.db_models import Booking as BookingDB
 from models.db_models import User, UserRole
 from models.pydantic.booking import Booking, BookingCreate, BookingUpdate
 from services import booking_service
-from services.auth_service import get_booking_with_permission_check, get_current_user, require_role
+from services.auth_service import get_current_user, require_role
+from services.booking_service import get_booking_with_permission_check
 
 router = APIRouter(
     prefix="/bookings",
@@ -23,8 +24,7 @@ async def get_bookings(
     db: Session = Depends(get_db), 
     _=Depends(require_role([UserRole.ADMIN]))
 ):
-    bookings = db.query(BookingDB).all()
-    return bookings
+    return booking_service.get_all_bookings(db)
 
 # Get user's own bookings
 @router.get("/my", response_model=List[Booking])

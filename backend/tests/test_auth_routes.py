@@ -17,9 +17,9 @@ client = TestClient(app)
 class TestAuthRoutes:
     """Tests related to authentication routes"""
     
-    def test_public_endpoint(self, client):
+    def test_public_endpoint(self, auth_client):
         """Test accessing a public endpoint"""
-        response = client.get("/api/v1/auth/public")
+        response = auth_client.get("/api/v1/auth/public")
         
         # Check status code
         assert response.status_code == status.HTTP_200_OK
