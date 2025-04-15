@@ -159,3 +159,64 @@ button:focus-visible {
     @apply bg-background text-foreground;
   }
 }
+
+
+/* Profile CSS */
+
+.profile-container {
+  display: flex;
+  flex-direction: column;
+  margin: 8px;
+  width: 95%;
+  border: 2px solid black;
+  border-radius: 10px;
+  background-color: black;
+  color: white;
+  opacity: 0.6;
+  overflow: hidden; /* Added to contain the sliding content */
+}
+
+.profile-container:hover {
+  opacity: 1;
+  transition: opacity 0.5s ease-in-out;
+  border-color: white;
+}
+
+/* Main profile row styling */
+.row {
+  display: flex;
+  width: 100%;
+}
+
+.profile-info {
+  padding: 8px;
+  width: 100%;
+}
+
+/* Slide-down content styling */
+.slide-down {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s ease-in-out;
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+.profile-container:hover .slide-down {
+  max-height: 100px; /* Adjust this value based on your content height */
+}
+
+.sign-out-button {
+  margin: 8px;
+  padding: 8px;
+  background-color: black;
+  color: white;
+  border: 2px solid grey;
+  border-radius: 5px;
+  cursor: pointer;
+  width: calc(100% - 16px); /* Full width minus margins */
+}
+
+.sign-out-button:hover {
+  border-color: white;
+  background-color: #333;
+}

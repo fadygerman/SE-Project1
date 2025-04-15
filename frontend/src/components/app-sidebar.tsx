@@ -7,6 +7,7 @@ import {
     SidebarGroup,
     SidebarGroupContent,
     SidebarGroupLabel,
+    SidebarHeader,
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
@@ -15,6 +16,7 @@ import { Link } from "@tanstack/react-router";
 import { Button } from "./ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { useTheme } from "@/hooks/use-dark-mode";
+import Profile from "@/auth/Profile";
 
 interface ItemsProps {
     title: string,
@@ -41,6 +43,9 @@ export function AppSidebar() {
 
     return (
         <Sidebar>
+            <SidebarHeader>
+                <Profile/>
+            </SidebarHeader>
             <SidebarContent>
                 <SidebarGroup>
                     <SidebarGroupLabel>Application</SidebarGroupLabel>
