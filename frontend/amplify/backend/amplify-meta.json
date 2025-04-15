@@ -1,0 +1,58 @@
+{
+  "providers": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-carrentalaws-dev-a7cef-authRole",
+      "UnauthRoleArn": "arn:aws:iam::963865443243:role/amplify-carrentalaws-dev-a7cef-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::963865443243:role/amplify-carrentalaws-dev-a7cef-authRole",
+      "Region": "eu-north-1",
+      "DeploymentBucketName": "amplify-carrentalaws-dev-a7cef-deployment",
+      "UnauthRoleName": "amplify-carrentalaws-dev-a7cef-unauthRole",
+      "StackName": "amplify-carrentalaws-dev-a7cef",
+      "StackId": "arn:aws:cloudformation:eu-north-1:963865443243:stack/amplify-carrentalaws-dev-a7cef/6a6669b0-130b-11f0-9747-0a2707f1ddaf",
+      "AmplifyAppId": "d3u8iv5ewrm0w2"
+    }
+  },
+  "auth": {
+    "carrentalaws9d557cb2": {
+      "service": "Cognito",
+      "providerPlugin": "awscloudformation",
+      "dependsOn": [],
+      "customAuth": false,
+      "frontendAuthConfig": {
+        "socialProviders": [],
+        "usernameAttributes": [
+          "EMAIL"
+        ],
+        "signupAttributes": [
+          "EMAIL"
+        ],
+        "passwordProtectionSettings": {
+          "passwordPolicyMinLength": 8,
+          "passwordPolicyCharacters": []
+        },
+        "mfaConfiguration": "OFF",
+        "mfaTypes": [
+          "SMS"
+        ],
+        "verificationMechanisms": [
+          "EMAIL"
+        ]
+      },
+      "providerMetadata": {
+        "s3TemplateURL": "https://s3.amazonaws.com/amplify-carrentalaws-dev-a7cef-deployment/amplify-cfn-templates/auth/carrentalaws9d557cb2-cloudformation-template.json",
+        "logicalId": "authcarrentalaws9d557cb2"
+      },
+      "lastPushTimeStamp": "2025-04-06T17:29:51.084Z",
+      "output": {
+        "UserPoolId": "eu-north-1_3cYMEI8RB",
+        "AppClientIDWeb": "2mjf5mmb10to1g4pqrgurnumql",
+        "AppClientID": "6qc2ic00s1187qvtsm89qc6pni",
+        "IdentityPoolId": "eu-north-1:0857790a-5fb0-49fa-a68c-a23d65cf787c",
+        "UserPoolArn": "arn:aws:cognito-idp:eu-north-1:963865443243:userpool/eu-north-1_3cYMEI8RB",
+        "IdentityPoolName": "carrentalaws9d557cb2_identitypool_9d557cb2__dev",
+        "UserPoolName": "carrentalaws9d557cb2_userpool_9d557cb2"
+      },
+      "lastPushDirHash": "pnc+QQZx6eY8XAmm9NmMfGp9208="
+    }
+  }
+}
