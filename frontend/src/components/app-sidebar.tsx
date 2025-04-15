@@ -7,6 +7,7 @@ import {
     SidebarGroup,
     SidebarGroupContent,
     SidebarGroupLabel,
+    SidebarHeader,
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
@@ -15,6 +16,7 @@ import { Link } from "@tanstack/react-router";
 import { Button } from "./ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { useTheme } from "@/hooks/use-dark-mode";
+import Profile from "./profile";
 
 interface ItemsProps {
     title: string,
@@ -37,15 +39,19 @@ const items: ItemsProps[] = [
 ]
 
 export function AppSidebar() {
-    const { setTheme } = useTheme()
+    const { setTheme } = useTheme();
 
     return (
         <Sidebar>
+            <SidebarHeader>
+                <Profile/>
+            </SidebarHeader>
             <SidebarContent>
                 <SidebarGroup>
-                    <SidebarGroupLabel>Application</SidebarGroupLabel>
+                    <SidebarGroupLabel>Car-Rental</SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
+                        
                             <>
                                 {items.map((item) => (
                                     <SidebarMenuItem key={item.title}>
