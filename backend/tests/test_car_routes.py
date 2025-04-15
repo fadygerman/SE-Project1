@@ -1,6 +1,11 @@
 from decimal import Decimal
+from unittest import mock
+from unittest.mock import Mock
 
 from fastapi import status
+
+from exceptions.currencies import CurrencyServiceUnavailableException
+
 
 class TestCarRetrieval:
     """Tests related to retrieving cars"""
@@ -38,16 +43,14 @@ class TestCarRetrieval:
         assert cars[0]["price_per_day"] == "50.00"
         assert cars[1]["price_per_day"] == "75.00"
 
-    def test_get_all_cars_with_currency(self, auth_client, test_data, monkeypatch):
-        """Test getting all cars with currency conversion
-        ATTENTION: Currency converter must be running to pass this test
-        """
-        # Mock the currency converter to return double the price for EUR
-        def mock_convert(self, from_curr, to_curr, amount):
-            return amount * 2
-            
-        from currency_converter.client import CurrencyConverterClient
-        monkeypatch.setattr(CurrencyConverterClient, "convert", mock_convert)
+    @mock.patch('services.car_service.get_currency_converter_client_instance')
+    def test_get_all_cars_with_currency(self, mock_get_client, auth_client, test_data):
+        """Test getting all cars with currency conversion"""
+        # Create properly structured mock with nested client
+        mock_client = Mock()
+        mock_client.convert.side_effect = lambda from_curr, to_curr, amount: amount * 2
+        
+        mock_get_client.return_value = mock_client
         
         response = auth_client.get("/api/v1/cars/?currency_code=EUR")
         assert response.status_code == status.HTTP_200_OK
@@ -58,6 +61,26 @@ class TestCarRetrieval:
         # Prices should be doubled as per our mock
         assert cars[0]["price_per_day"] == "100.00"
         assert cars[1]["price_per_day"] == "150.00"
+        
+        assert mock_client.convert.call_count == 2
+        mock_client.convert.assert_any_call("USD", "EUR", Decimal("50.00"))
+        mock_client.convert.assert_any_call("USD", "EUR", Decimal("75.00"))
+
+    @mock.patch('services.car_service.get_currency_converter_client_instance')
+    def test_get_all_cars_with_currency_service_unavailable(self, mock_client_instance, auth_client, test_data):
+        """Test getting all cars when currency service is unavailable"""
+        # Mock the client to raise an exception
+        mock_client_instance.side_effect = CurrencyServiceUnavailableException("Currency service unavailable")
+        
+        response = auth_client.get("/api/v1/cars/?currency_code=EUR")
+        
+        # Should return 503 Service Unavailable
+        assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
+        
+        # Check error message
+        error = response.json()
+        assert "detail" in error
+        assert "Currency service is unavailable" in error["detail"]
 
     def test_get_all_cars_with_invalid_currency(self, auth_client, test_data):
         """Test getting all cars with invalid currency code"""
@@ -99,14 +122,13 @@ class TestCarRetrieval:
         car = response.json()
         assert car["price_per_day"] == "50.00"  # Should be in USD
 
-    def test_get_car_by_id_with_currency(self, auth_client, test_data, monkeypatch):
+    @mock.patch('services.car_service.get_currency_converter_client_instance')
+    def test_get_car_by_id_with_currency(self, mock_get_client, auth_client, test_data):
         """Test getting a car by ID with currency conversion"""
-        # Mock the currency converter to return a specific price for EUR
-        def mock_convert(self, from_curr, to_curr, amount):
-            return amount * 2
-            
-        from currency_converter.client import CurrencyConverterClient
-        monkeypatch.setattr(CurrencyConverterClient, "convert", mock_convert)
+        # Create mock client
+        mock_client = Mock()
+        mock_client.convert.return_value = Decimal("45.00")  # EUR value for USD 50.00
+        mock_get_client.return_value = mock_client
         
         car_id = test_data["cars"][0].id
         response = auth_client.get(f"/api/v1/cars/{car_id}?currency_code=EUR")
@@ -116,7 +138,23 @@ class TestCarRetrieval:
         car = response.json()
         assert car["id"] == car_id
         assert car["name"] == "TestCar1"
-        assert car["price_per_day"] == "100.00"  # Should be doubled
+        assert car["price_per_day"] == "45.00"
+        
+        # Verify the convert method was called with correct parameters
+        mock_client.convert.assert_called_once_with("USD", "EUR", Decimal("50.00"))
+
+    @mock.patch('services.car_service.get_currency_converter_client_instance')
+    def test_get_car_by_id_with_currency_service_unavailable(self, mock_client_instance, auth_client, test_data):
+        mock_client_instance.side_effect = CurrencyServiceUnavailableException("Currency service unavailable")
+        
+        car_id = test_data["cars"][0].id
+        response = auth_client.get(f"/api/v1/cars/{car_id}?currency_code=EUR")
+        
+        assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
+        
+        error = response.json()
+        assert "detail" in error
+        assert "Currency service is unavailable" in error["detail"]
 
     def test_get_car_by_id_with_invalid_currency(self, auth_client, test_data):
         """Test getting a car by ID with invalid currency"""

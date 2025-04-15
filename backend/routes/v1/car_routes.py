@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from exceptions.cars import CarNotFoundException
-from exceptions.currencies import InvalidCurrencyException
+from exceptions.currencies import CurrencyServiceUnavailableException, InvalidCurrencyException
 from models.currencies import Currency
 from models.pydantic.car import Car
 from services import car_service
@@ -36,6 +36,11 @@ async def get_cars(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=e.message
         )
+    except CurrencyServiceUnavailableException as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=e.message
+        )
 
 # Get car by ID endpoint
 @router.get("/{car_id}", response_model=Car)
@@ -61,5 +66,10 @@ async def get_car(
     except InvalidCurrencyException as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
+            detail=e.message
+        )
+    except CurrencyServiceUnavailableException as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=e.message
         )

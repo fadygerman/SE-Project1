@@ -1,8 +1,8 @@
 from datetime import date, time
 from decimal import Decimal
 
-from fastapi import Depends, HTTPException
 import pytest
+from fastapi import Depends, HTTPException
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker

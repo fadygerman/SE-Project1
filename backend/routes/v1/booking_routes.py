@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from exceptions.bookings import *
+from exceptions.currencies import CurrencyServiceUnavailableException
 from models.db_models import Booking as BookingDB
 from models.db_models import User, UserRole
 from models.pydantic.booking import Booking, BookingCreate, BookingUpdate
@@ -56,7 +57,6 @@ async def create_booking(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=e.message
         )
-    
     except (
         CarNotAvailableException,
         BookingOverlapException,
@@ -64,7 +64,12 @@ async def create_booking(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=e.message
-        )    
+        )
+    except CurrencyServiceUnavailableException as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=e.message
+        )
 
 @router.put("/{booking_id}", response_model=Booking)
 async def update_booking(
@@ -87,5 +92,10 @@ async def update_booking(
     ) as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
+            detail=e.message
+        )
+    except CurrencyServiceUnavailableException as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=e.message
         )

@@ -38,7 +38,7 @@ class TestUserRetrieval:
         assert user["phone_number"] == "+1234567890"
         assert user["cognito_id"] == "cognito1"
         
-    def test_get_user_by_id_unauthorized(self, client, test_data):
+    def test_get_user_by_id_unauthorized(self, auth_client, test_data):
         """Test getting another user's data (should be forbidden)"""
         # Create a fixture that authenticates as user 2
         async def override_get_current_user():
@@ -54,7 +54,7 @@ class TestUserRetrieval:
         try:
             # Try to access user 1's data as user 2
             user_id = test_data["users"][0].id
-            response = client.get(f"/api/v1/users/{user_id}")
+            response = auth_client.get(f"/api/v1/users/{user_id}")
             
             # Check status code - should be forbidden
             assert response.status_code == status.HTTP_403_FORBIDDEN
