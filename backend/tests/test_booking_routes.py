@@ -398,7 +398,7 @@ class TestBookingDateUpdates:
         original_overrides = app.dependency_overrides.copy()
         
         # Set the test user to user 2
-        from utils.auth_cognito import get_current_user
+        from services.auth_service import get_current_user
         app.dependency_overrides[get_current_user] = override_get_current_user
         
         try:
@@ -609,7 +609,7 @@ class TestBookingRetrieval:
         original_overrides = app.dependency_overrides.copy()
         
         # Set the test user to our new user with no bookings
-        from utils.auth_cognito import get_current_user
+        from services.auth_service import get_current_user
         app.dependency_overrides[get_current_user] = override_get_current_user
         
         try:
@@ -645,7 +645,7 @@ class TestBookingRetrieval:
         original_overrides = app.dependency_overrides.copy()
         
         # Set the test user to user 2
-        from utils.auth_cognito import get_current_user
+        from services.auth_service import get_current_user
         app.dependency_overrides[get_current_user] = override_get_current_user
         
         try:

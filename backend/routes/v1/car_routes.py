@@ -9,7 +9,7 @@ from exceptions.currencies import InvalidCurrencyException
 from models.currencies import Currency
 from models.pydantic.car import Car
 from services import car_service
-from utils.auth_cognito import get_current_user
+from services.auth_service import get_current_user
 
 router = APIRouter(
     prefix="/cars",

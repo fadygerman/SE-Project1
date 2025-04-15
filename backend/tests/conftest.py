@@ -10,7 +10,7 @@ from database import get_db
 from main import app
 from models.currencies import Currency
 from models.db_models import Base, Booking, BookingStatus, Car, User
-from utils.auth_cognito import get_current_user, require_role
+from services.auth_service import get_current_user, require_role
 
 # Create test database
 SQLALCHEMY_TEST_DATABASE_URL = "sqlite:///./test.db"
@@ -171,27 +171,35 @@ def admin_client(client, test_data):
     """Client with admin authentication and role permissions"""
     # Create an async function that returns a test user with admin role
     async def override_get_current_user():
-        # Return the same user but with admin flag
+        # Return the same user but with admin role
         user = test_data["users"][0]
         # We'll pretend this user has admin role
         setattr(user, "is_admin", True)
         return user
         
     # Create a mock admin role check function that always returns True
-    async def admin_role_check():
+    async def admin_role_check(user=None):
         return True
     
-    # Store the original dependency overrides
+    # Store the original dependency overrides and require_role function
     original_overrides = app.dependency_overrides.copy()
+    original_require_role = require_role  # Use the imported require_role directly
     
-    # Update dependency overrides
+    # Override the user dependency
     app.dependency_overrides[get_current_user] = override_get_current_user
     
-    # Here's the key: we need to override the specific dependency that's used in the route
-    # This is why our previous approach didn't work
-    app.dependency_overrides[require_role(["admin"])] = admin_role_check
+    # Mock the require_role function to return our admin_role_check for admin role
+    def mock_require_role(allowed_roles):
+        if "admin" in allowed_roles:
+            return admin_role_check
+        return original_require_role(allowed_roles)
+    
+    # Replace the require_role function temporarily
+    import services.auth_service  # Add this import at this location
+    services.auth_service.require_role = mock_require_role
     
     yield client
     
-    # Restore original dependency overrides
+    # Restore original dependencies and function
     app.dependency_overrides = original_overrides
+    services.auth_service.require_role = original_require_role  

@@ -6,7 +6,9 @@ import os
 from database import get_db
 from models.db_models import User
 from models.pydantic.user import UserRegister
-from utils.auth_cognito import get_current_user, verify_cognito_jwt
+from services.auth_service import get_current_user
+from services.cognito_service import verify_cognito_jwt
+from exceptions.auth import UnauthorizedException, ForbiddenException
 
 router = APIRouter(
     prefix="/auth",
@@ -33,14 +35,15 @@ async def register_cognito_user(
         
         # Verify token cognito_id matches the one in registration data
         if token_cognito_id != user_data.cognito_id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
+            raise ForbiddenException(
                 detail="Cognito ID in token does not match provided ID"
             )
             
+    except UnauthorizedException as e:
+        # Pass through our custom exceptions
+        raise 
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+        raise UnauthorizedException(
             detail=f"Invalid token: {str(e)}"
         )
     

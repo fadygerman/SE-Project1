@@ -7,7 +7,7 @@ from models.db_models import Booking as BookingDB, User
 from models.pydantic.booking import Booking, BookingCreate, BookingUpdate
 from services import booking_service
 from exceptions.bookings import *
-from utils.auth_cognito import get_current_user, require_role
+from services.auth_service import get_current_user, require_role
 
 router = APIRouter(
     prefix="/bookings",

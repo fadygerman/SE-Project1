@@ -5,7 +5,7 @@ from typing import List
 from database import get_db
 from models.db_models import User as UserModel
 from models.pydantic.user import User
-from utils.auth_cognito import get_current_user, require_role
+from services.auth_service import get_current_user, require_role
 
 router = APIRouter(
     prefix="/users",
