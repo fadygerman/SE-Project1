@@ -1,0 +1,59 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: campuswien
+
+app: true
+# serverless.yml
+service: car-service-python
+
+provider:
+  name: aws
+  runtime: python3.9
+  region: eu-north-1
+  stage: dev
+  environment:
+    CAR_TABLE: ${self:service}-${self:provider.stage}-cars
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: !GetAtt CarsTable.Arn
+
+functions:
+  createCar:
+    handler: src/handlers/create_car.handler
+    events:
+      - http:
+          path: cars
+          method: post
+          cors: true
+
+  updateCar:
+    handler: src/handlers/update_car.handler
+    events:
+      - http:
+          path: cars/{id}
+          method: put
+          cors: true
+          request:
+            parameters:
+              paths:
+                id: true
+
+resources:
+  Resources:
+    CarsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.CAR_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
