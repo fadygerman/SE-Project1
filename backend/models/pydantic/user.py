@@ -4,11 +4,11 @@ Pydantic models, provided by the Pydantic library
 are used to validate incoming data, serialize outgoing data, 
 and define the structure of the data used in the application.
 '''
-from typing import Optional
-from datetime import date, timedelta
-
 from enum import Enum
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+
+from models.db_models import UserRole
+
 
 class User(BaseModel):
     id: int
@@ -17,9 +17,9 @@ class User(BaseModel):
     email: EmailStr = Field(description="User's email address")
     phone_number: str = Field(description="User's phone number")
     cognito_id: str = Field(description="AWS Cognito user ID")
+    role: UserRole = Field(default=UserRole.USER, description="User's role")
     
-    model_config = ConfigDict(from_attributes=True)
-    
+    model_config = ConfigDict(from_attributes=True)    
     @field_validator('phone_number')
     @classmethod
     def validate_phone(cls, v):

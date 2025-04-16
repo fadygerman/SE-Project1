@@ -20,6 +20,11 @@ class BookingStatus(enum.Enum):
     CANCELED = "CANCELED"
     OVERDUE = "OVERDUE"
 
+class UserRole(enum.Enum):
+    USER = "USER"
+    ADMIN = "ADMIN"
+    STAFF = "STAFF"  # Optional, if you need a middle-tier role
+
 class User(Base):
     __tablename__ = "users"
     
@@ -29,6 +34,7 @@ class User(Base):
     email = Column(String(150), unique=True, index=True)
     phone_number = Column(String(20), unique=True)
     cognito_id = Column(String(255), unique=True, nullable=True)
+    role = Column(Enum(UserRole), default=UserRole.USER)
     
     # Relationship to bookings
     bookings = relationship("Booking", back_populates="user")
