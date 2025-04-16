@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -69,26 +69,14 @@ async def create_booking(
 
 @router.put("/{booking_id}", response_model=Booking)
 async def update_booking(
-    booking_id: int, 
-    booking_update: BookingUpdate, 
-    db: Session = Depends(get_db), 
-    current_user: User = Depends(get_current_user)
+    booking: BookingDB = Depends(get_booking_with_permission_check),
+    booking_update: BookingUpdate = Body(...),
+    db: Session = Depends(get_db)
 ):
-    # Verify the booking belongs to the current user or user is admin
-    booking = db.query(BookingDB).filter(BookingDB.id == booking_id).first()
-    if booking and booking.user_id != current_user.id and current_user.role != UserRole.ADMIN:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You can only update your own bookings"
-        )
-    
+    """Update a booking. Users can only update their own bookings unless they are admins."""
     try:
-        return booking_service.update_booking(booking_id, booking_update, db)
-    except BookingNotFoundException as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=e.message
-        )
+        # Pass the booking ID from the retrieved booking object
+        return booking_service.update_booking(booking.id, booking_update, db)
     except (
         BookingStateException,
         DateRangeException, 

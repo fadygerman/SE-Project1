@@ -103,9 +103,12 @@ def require_role(allowed_roles):
         if user.role in allowed_roles:
             return True
         
+        # Convert each enum to its string value for a clearer error message
+        role_names = [r.value for r in allowed_roles]
+        
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Access denied. Required role: {', '.join(allowed_roles)}"
+            detail=f"Access denied. Required role: {', '.join(role_names)}"
         )
     return role_checker
 

@@ -410,7 +410,7 @@ class TestBookingDateUpdates:
             
             # Should be forbidden
             assert response.status_code == status.HTTP_403_FORBIDDEN
-            assert "You can only update your own bookings" in response.json()["detail"]
+            assert "You can only access your own bookings" in response.json()["detail"]
         finally:
             # Restore original overrides
             app.dependency_overrides = original_overrides
