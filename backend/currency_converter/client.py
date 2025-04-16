@@ -1,7 +1,6 @@
 import os
 from decimal import Decimal
 
-import dotenv
 import requests
 import zeep
 
@@ -32,7 +31,6 @@ class CurrencyConverterClient:
         return (Decimal(currency_rate_in_cent) / Decimal('100')).quantize(Decimal('0.00'))
 
 def get_jwt_token() -> str:
-        dotenv.load_dotenv()
         client_id = os.getenv("AUTH0_CURRENCY_CONVERTER_CLIENT_ID")
         client_secret = os.getenv("AUTH0_CURRENCY_CONVERTER_CLIENT_SECRET")
 
