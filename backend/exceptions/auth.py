@@ -42,3 +42,7 @@ class ForbiddenException(Exception):
         self.detail = detail
         self.message = detail
         super().__init__(self.message)
+
+class ConfigurationError(Exception):
+    """Exception raised for errors in application configuration."""
+    pass

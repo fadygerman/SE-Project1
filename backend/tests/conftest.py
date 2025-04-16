@@ -1,6 +1,7 @@
 from datetime import date, time
 from decimal import Decimal
 
+from fastapi import Depends, HTTPException
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -171,16 +172,19 @@ def admin_client(client, test_data):
     """Client with admin authentication and role permissions"""
     # Create an async function that returns a test user with admin role
     async def override_get_current_user():
-        # Return the same user but with admin role
+        # Return the first user but assign the admin role
         user = test_data["users"][0]
-        # We'll pretend this user has admin role
-        setattr(user, "is_admin", True)
+        user.role = UserRole.ADMIN  # Assign the admin role directly
         return user
         
     # Create a mock admin role check function that always returns True
-    async def admin_role_check(user=None):
-        return True
-    
+    async def admin_role_check(user: User = Depends(get_current_user)):
+        # This check might not be strictly necessary anymore if override_get_current_user
+        # always returns an admin, but it doesn't hurt.
+        if user.role == UserRole.ADMIN:
+            return True
+        raise HTTPException(status_code=403, detail="Admin role required")
+
     # Store the original dependency overrides and require_role function
     original_overrides = app.dependency_overrides.copy()
     original_require_role = require_role  # Use the imported require_role directly
@@ -188,14 +192,17 @@ def admin_client(client, test_data):
     # Override the user dependency
     app.dependency_overrides[get_current_user] = override_get_current_user
     
-    # Mock the require_role function to return our admin_role_check for admin role
+    # Mock the require_role function to use our admin_role_check for admin role
+    # This part might be redundant if override_get_current_user ensures the user is admin,
+    # but it provides an extra layer for testing role dependencies explicitly.
     def mock_require_role(allowed_roles):
         if UserRole.ADMIN in allowed_roles:
-            return admin_role_check
+            # Return a dependency that uses the overridden get_current_user
+            return Depends(admin_role_check) 
         return original_require_role(allowed_roles)
     
     # Replace the require_role function temporarily
-    import services.auth_service  # Add this import at this location
+    import services.auth_service
     services.auth_service.require_role = mock_require_role
     
     yield client
