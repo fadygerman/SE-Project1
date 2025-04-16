@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from database import get_db
-from models.db_models import User as UserModel
+from models.db_models import User as UserModel, UserRole
 from models.pydantic.user import User
 from services.auth_service import get_current_user, require_role
 
@@ -16,7 +16,7 @@ router = APIRouter(
 @router.get("/", response_model=List[User])
 async def get_users(
     db: Session = Depends(get_db),
-    _=Depends(require_role(["admin"]))  # Only admins can list all users
+    _=Depends(require_role([UserRole.ADMIN]))  # Only admins can list all users
 ):
     users = db.query(UserModel).all()
     return users

@@ -13,7 +13,7 @@ from services.cognito_service import (
 )
 from exceptions.auth import UnauthorizedException, ForbiddenException
 
-from models.db_models import User
+from models.db_models import User, UserRole
 
 
 class TestCognitoAuthentication:
@@ -238,7 +238,7 @@ class TestCognitoAuthentication:
             mock_require_role.return_value = authorized_check
             
             # Create the role checker with our patched version
-            role_checker = mock_require_role(["admin"])
+            role_checker = mock_require_role([UserRole.ADMIN])
             
             # This should now succeed
             result = await role_checker(user)
@@ -258,7 +258,7 @@ class TestCognitoAuthentication:
             )
             
             # Setup a dependency that requires admin role
-            admin_role_dependency = require_role(["admin"])
+            admin_role_dependency = require_role([UserRole.ADMIN])
             
             # Check role should raise ForbiddenException
             with pytest.raises(ForbiddenException) as exc_info:

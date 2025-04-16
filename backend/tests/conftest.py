@@ -9,7 +9,7 @@ from sqlalchemy.orm import sessionmaker
 from database import get_db
 from main import app
 from models.currencies import Currency
-from models.db_models import Base, Booking, BookingStatus, Car, User
+from models.db_models import Base, Booking, BookingStatus, Car, User, UserRole
 from services.auth_service import get_current_user, require_role
 
 # Create test database
@@ -190,7 +190,7 @@ def admin_client(client, test_data):
     
     # Mock the require_role function to return our admin_role_check for admin role
     def mock_require_role(allowed_roles):
-        if "admin" in allowed_roles:
+        if UserRole.ADMIN in allowed_roles:
             return admin_role_check
         return original_require_role(allowed_roles)
     

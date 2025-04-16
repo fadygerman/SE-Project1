@@ -3,7 +3,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models.db_models import User
+from models.db_models import User, UserRole
 from exceptions.auth import (
     MissingUserIdentifierException, 
     UserNotRegisteredException,
@@ -95,5 +95,41 @@ async def get_current_user(
 def require_role(allowed_roles):
     """Check if user has one of the required roles"""
     async def role_checker(user: User = Depends(get_current_user)):
-        return True  # For now, allow all authenticated users
+        # If no roles provided, any authenticated user is allowed
+        if not allowed_roles:
+            return True
+        
+        # Check if user has one of the allowed roles
+        if user.role in allowed_roles:
+            return True
+        
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Access denied. Required role: {', '.join(allowed_roles)}"
+        )
     return role_checker
+
+async def get_booking_with_permission_check(
+    booking_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Check if the user has permission to access the specified booking"""
+    from models.db_models import Booking as BookingDB
+    
+    booking = db.query(BookingDB).filter(BookingDB.id == booking_id).first()
+    
+    if booking is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Booking with ID {booking_id} not found"
+        )
+    
+    # Check if it's the user's booking or if they have admin role
+    if booking.user_id != current_user.id and current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, 
+            detail="You can only access your own bookings"
+        )
+    
+    return booking
