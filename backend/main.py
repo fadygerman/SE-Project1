@@ -1,5 +1,9 @@
+import dotenv
+
+dotenv.load_dotenv()
+
 from fastapi import FastAPI
-from routes.v1 import car_routes, user_routes, booking_routes
+from routes.v1 import car_routes, user_routes, booking_routes, auth_routes
 
 
 # Initialize FastAPI app
@@ -23,8 +27,10 @@ async def health_check():
 app.include_router(car_routes.router, prefix="/api/v1")
 app.include_router(user_routes.router, prefix="/api/v1")
 app.include_router(booking_routes.router, prefix="/api/v1")
+app.include_router(auth_routes.router, prefix="/api/v1")
 
 # Run the application
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)

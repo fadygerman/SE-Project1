@@ -1,6 +1,7 @@
 from datetime import date, time
 from decimal import Decimal
 
+from fastapi import Depends, HTTPException
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -9,7 +10,8 @@ from sqlalchemy.orm import sessionmaker
 from database import get_db
 from main import app
 from models.currencies import Currency
-from models.db_models import Base, Booking, BookingStatus, Car, User
+from models.db_models import Base, Booking, BookingStatus, Car, User, UserRole
+from services.auth_service import get_current_user, require_role
 
 # Create test database
 SQLALCHEMY_TEST_DATABASE_URL = "sqlite:///./test.db"
@@ -30,21 +32,7 @@ def test_db():
         # Clean up after test
         Base.metadata.drop_all(bind=engine)
 
-# Override the dependency
-@pytest.fixture
-def client(test_db):
-    def override_get_db():
-        try:
-            yield test_db
-        finally:
-            pass
-    
-    app.dependency_overrides[get_db] = override_get_db
-    with TestClient(app) as c:
-        yield c
-    app.dependency_overrides.clear()
-
-# Add test data
+# Create test data
 @pytest.fixture
 def test_data(test_db):
     # Create test users
@@ -53,7 +41,6 @@ def test_data(test_db):
         last_name="User1",
         email="testuser1@example.com",
         phone_number="+1234567890",
-        password_hash="hash1",
         cognito_id="cognito1"
     )
     
@@ -62,7 +49,6 @@ def test_data(test_db):
         last_name="User2",
         email="testuser2@example.com",
         phone_number="+0987654321",
-        password_hash="hash2",
         cognito_id="cognito2"
     )
     
@@ -138,3 +124,67 @@ def test_data(test_db):
         "cars": [car1, car2],
         "bookings": [booking1, booking2]
     }
+
+# Override the dependency for testing
+@pytest.fixture
+def client(test_db):
+    # Override the get_db dependency
+    def override_get_db():
+        try:
+            yield test_db
+        finally:
+            pass
+    
+    # Store the original dependency overrides
+    original_overrides = app.dependency_overrides.copy()
+    
+    # Set up dependency overrides
+    app.dependency_overrides[get_db] = override_get_db
+    
+    # Create the test client
+    with TestClient(app) as c:
+        yield c
+    
+    # Restore original dependency overrides
+    app.dependency_overrides = original_overrides
+
+# Fixtures for authenticated clients
+@pytest.fixture
+def auth_client(client, test_data):
+    """Client with regular user authentication"""
+    # Create an async function that returns a test user
+    async def override_get_current_user():
+        return test_data["users"][0]
+        
+    # Store the original dependency overrides
+    original_overrides = app.dependency_overrides.copy()
+    
+    # Override the auth dependency
+    app.dependency_overrides[get_current_user] = override_get_current_user
+    
+    yield client
+    
+    # Restore original dependency overrides
+    app.dependency_overrides = original_overrides
+
+@pytest.fixture
+def admin_client(client, test_data):
+    """Client with admin authentication"""
+    # Create an async function that returns a test user with admin role
+    async def override_get_current_user():
+        # Return the first user but assign the admin role
+        user = test_data["users"][0]
+        user.role = UserRole.ADMIN  # Assign the admin role directly
+        return user
+
+    # Store the original dependency overrides
+    original_overrides = app.dependency_overrides.copy()
+
+    # Override only the get_current_user dependency
+    app.dependency_overrides[get_current_user] = override_get_current_user
+
+    # Yield the client for the test
+    yield client
+
+    # Restore original dependency overrides after the test
+    app.dependency_overrides = original_overrides
