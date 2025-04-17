@@ -1,11 +1,15 @@
 from datetime import date, timedelta
-from unittest.mock import patch
+from decimal import Decimal
+from unittest import mock
+from unittest.mock import Mock, patch
 
 import pytest
 from fastapi import status
 
+from exceptions.currencies import CurrencyServiceUnavailableException
 from main import app
 from models.db_models import Booking, BookingStatus
+from services.booking_service import get_car_price_in_currency
 
 
 class TestBookingCreation:
@@ -58,6 +62,30 @@ class TestBookingCreation:
         car_price = float(test_data["cars"][0].price_per_day)
         expected_total = car_price * 4
         assert float(created_booking["total_cost"]) == expected_total
+
+    @patch('services.booking_service.get_currency_converter_client_instance')
+    def test_create_booking_currency_service_unavailable(self, mock_currency_converter_client, auth_client, test_data):
+        """Test creating a booking when currency service is unavailable"""
+        # Mock the currency converter client to raise an exception
+        mock_currency_converter_client.side_effect = CurrencyServiceUnavailableException("Currency service unavailable")
+        
+        booking_data = {
+            "user_id": test_data["users"][0].id,
+            "car_id": test_data["cars"][0].id,
+            "start_date": "2025-06-01",
+            "end_date": "2025-06-05",
+            "planned_pickup_time": "09:30:00",
+            "currency_code": "EUR",  # Using non-USD currency to trigger conversion
+        }
+        
+        response = auth_client.post("/api/v1/bookings/", json=booking_data)
+        
+        # Check status code - should be service unavailable
+        assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
+        
+        # Check error message
+        error = response.json()
+        assert "Currency service is unavailable" in error["detail"]
 
     def test_create_booking_car_not_found(self, auth_client, test_data):
         """Test creating a booking with non-existent car ID"""
@@ -271,6 +299,41 @@ class TestBookingCreation:
         assert "planned_pickup_time" in str(error)  # Field should be mentioned
         assert "invalid" in str(error).lower()  # Should mention invalid format
 
+    @mock.patch('services.booking_service.get_currency_converter_client_instance')
+    def test_create_booking_with_currency(self, mock_get_client, auth_client, test_data):
+        """Test creating a booking with a different currency"""
+        # Create properly structured mock with nested client
+        mock_client = Mock()
+        mock_client.get_currency_rate.return_value = Decimal("0.85")
+        
+        mock_get_client.return_value = mock_client
+        
+        car_id = test_data["cars"][0].id
+        user_id = test_data["users"][0].id
+        
+        request_data = {
+            "user_id": user_id,
+            "car_id": car_id,
+            "start_date": "2026-01-01",
+            "end_date": "2026-01-03",
+            "planned_pickup_time": "10:00:00",
+            "currency_code": "GBP"
+        }
+        
+        response = auth_client.post(
+            "/api/v1/bookings/",
+            json=request_data
+        )
+        
+        assert response.status_code == status.HTTP_201_CREATED
+        booking = response.json()
+        assert booking["user_id"] == user_id
+        assert booking["car_id"] == car_id
+        assert booking["currency_code"] == "GBP"
+        
+        # Verify the conversion was called correctly
+        mock_client.get_currency_rate.assert_called_once_with("USD", "GBP")
+
 
 class TestBookingDateUpdates:
     """Tests related to updating booking dates"""
@@ -389,7 +452,7 @@ class TestBookingDateUpdates:
         # Status should be updated to COMPLETED
         assert updated_booking["status"] == "COMPLETED"
     
-    def test_unauthorized_booking_update(self, client, test_data):
+    def test_unauthorized_booking_update(self, auth_client, test_data):
         """Test that a user cannot update another user's booking"""
         # Create a fixture that authenticates as user 2
         async def override_get_current_user():
@@ -407,7 +470,7 @@ class TestBookingDateUpdates:
             booking_id = test_data["bookings"][0].id
             update_data = {"status": "CANCELED"}
             
-            response = client.put(f"/api/v1/bookings/{booking_id}", json=update_data)
+            response = auth_client.put(f"/api/v1/bookings/{booking_id}", json=update_data)
             
             # Should be forbidden
             assert response.status_code == status.HTTP_403_FORBIDDEN
@@ -586,7 +649,7 @@ class TestBookingRetrieval:
         expected_ids = [b.id for b in user1_bookings]
         assert set(booking_ids) == set(expected_ids)
         
-    def test_get_my_bookings_empty(self, client, test_data, test_db):
+    def test_get_my_bookings_empty(self, auth_client, test_data, test_db):
         """Test getting bookings when user has no bookings"""
         # Create a user with no bookings
         from models.db_models import User
@@ -613,7 +676,7 @@ class TestBookingRetrieval:
         app.dependency_overrides[get_current_user] = override_get_current_user
         
         try:
-            response = client.get("/api/v1/bookings/my")
+            response = auth_client.get("/api/v1/bookings/my")
             
             # Check status code
             assert response.status_code == status.HTTP_200_OK
@@ -635,7 +698,7 @@ class TestBookingRetrieval:
         booking = response.json()
         assert booking["id"] == booking_id
         
-    def test_get_booking_by_id_unauthorized(self, client, test_data):
+    def test_get_booking_by_id_unauthorized(self, auth_client, test_data):
         """Test that a user cannot access another user's booking"""
         # Create a fixture that authenticates as user 2
         async def override_get_current_user():
@@ -651,7 +714,7 @@ class TestBookingRetrieval:
         try:
             # Try to access user 1's booking
             booking_id = test_data["bookings"][0].id
-            response = client.get(f"/api/v1/bookings/{booking_id}")
+            response = auth_client.get(f"/api/v1/bookings/{booking_id}")
             
             # Should be forbidden
             assert response.status_code == status.HTTP_403_FORBIDDEN
@@ -810,3 +873,31 @@ def test_date_validation_parametrized(auth_client, test_data, date_func, field, 
     # Check error message
     error = response.json()
     assert error_message in error["detail"]
+
+def test_get_car_price_in_currency_success():
+    """Test successful price conversion"""
+    with patch('services.booking_service.get_currency_converter_client_instance') as mock_get_client:
+        mock_client = Mock()
+        mock_client.convert.return_value = Decimal('110.00')
+        
+        mock_get_client.return_value = mock_client
+        
+        # Test the conversion
+        result = get_car_price_in_currency(Decimal('100.00'), 'EUR')
+        
+        # Verify the result
+        assert result == Decimal('110.00')
+        mock_client.convert.assert_called_once_with('USD', 'EUR', Decimal('100.00'))
+
+def test_get_car_price_in_currency_service_unavailable():
+    """Test price conversion when currency service is unavailable"""
+    with patch('services.booking_service.get_currency_converter_client_instance') as mock_get_client:
+        # Make the client raise an exception
+        mock_get_client.side_effect = CurrencyServiceUnavailableException("Currency service unavailable")
+        
+        # Test that the correct exception is raised
+        with pytest.raises(CurrencyServiceUnavailableException) as excinfo:
+            get_car_price_in_currency(Decimal('100.00'), 'EUR')
+        
+        # Verify the exception message
+        assert "Currency service is unavailable" in str(excinfo.value)

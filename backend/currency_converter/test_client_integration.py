@@ -6,6 +6,7 @@ import pytest
 import zeep.exceptions
 
 from currency_converter.client import CurrencyConverterClient, get_currency_converter_client, get_jwt_token
+from exceptions.currencies import CurrencyServiceUnavailableException
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -52,13 +53,13 @@ def test_get_jwt_token_integration_fake_token():
     This test will use the real AUTH0 API to get a JWT token.
     """
     
-    with pytest.raises(ConnectionError):
+    with pytest.raises(CurrencyServiceUnavailableException):
         client = get_currency_converter_client("fake-token")
     
 
 def test_prepare_currency_converter_client_integration(jwt_token):
     """
-    ATTENTION: Currency converter has to run
+    ATTENTION: Currency converter must be running
     """
     
     client = get_currency_converter_client(jwt_token)

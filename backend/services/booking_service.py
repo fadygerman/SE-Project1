@@ -25,6 +25,7 @@ def create_booking(booking: BookingCreate, user_id: int, db: Session) -> Booking
     
     total_cost = calculate_total_cost(car.price_per_day, booking.start_date, booking.end_date)
     
+    # Exception will be raised if the currency converter service is unavailable
     currency_converter_client = get_currency_converter_client_instance()
     exchange_rate = currency_converter_client.get_currency_rate('USD', booking.currency_code.value)
     
