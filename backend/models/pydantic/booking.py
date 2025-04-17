@@ -55,7 +55,6 @@ class Booking(BaseModel):
     
 # Request models (input)
 class BookingCreate(BaseModel):
-    # user_id: int = Field(description="ID of the user making the booking")
     car_id: int = Field(description="ID of the car being booked")
     start_date: date = Field(description="Start date of the booking period")
     end_date: date = Field(description="End date of the booking period")

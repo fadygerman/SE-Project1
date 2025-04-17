@@ -4,8 +4,7 @@ from decimal import Decimal
 from sqlalchemy.orm import Session
 
 import exceptions.bookings as booking_exceptions
-from currency_converter.client import CurrencyConverterClient, get_currency_converter_client_instance
-from models.currencies import Currency
+from currency_converter.client import get_currency_converter_client_instance
 from models.db_models import Booking as BookingDB
 from models.db_models import BookingStatus
 from models.db_models import Car as CarDB
@@ -13,38 +12,53 @@ from models.pydantic.booking import BookingCreate, BookingUpdate
 
 
 def create_booking(booking: BookingCreate, user_id: int, db: Session):
-  car = db.query(CarDB).filter(CarDB.id == booking.car_id).first()
-  if not car:
-    raise booking_exceptions.NoCarFoundException(booking.car_id)
-  
-  if not car.is_available:
-    raise booking_exceptions.CarNotAvailableException(booking.car_id)
-  
-  if does_bookings_overlap(booking.car_id, booking.start_date, booking.end_date, db):
-    raise booking_exceptions.BookingOverlapException(booking.car_id)
-  
-  total_cost = calculate_total_cost(car.price_per_day, booking.start_date, booking.end_date)
-  
-  currency_converter_client = get_currency_converter_client_instance()
-  exchange_rate = currency_converter_client.get_currency_rate('USD', booking.currency_code.value)
-  
-  new_booking = BookingDB(
-      user_id=user_id,
-      car_id=booking.car_id,
-      start_date=booking.start_date,
-      end_date=booking.end_date,
-      planned_pickup_time=booking.planned_pickup_time,  # Store time in UTC (without timezone)
-      total_cost=total_cost,
-      currency_code=booking.currency_code,
-      exchange_rate=exchange_rate,
-      status=BookingStatus.PLANNED
-  )
+    """Creates a new booking in the database.
 
-  db.add(new_booking)
-  db.commit()
-  db.refresh(new_booking)
+    Validates car availability and checks for overlapping bookings before
+    creating the new booking record. Calculates the total cost based on
+    car price and duration, and fetches the currency exchange rate.
 
-  return new_booking
+    Args:
+        booking_data: The Pydantic model containing the booking creation details
+                      (car_id, start_date, end_date, planned_pickup_time, currency_code).
+        user_id: The ID of the user creating the booking.
+        db: The database session dependency.
+
+    Returns:
+        The newly created BookingDB object.
+    """   
+    car = db.query(CarDB).filter(CarDB.id == booking.car_id).first()
+    if not car:
+        raise booking_exceptions.NoCarFoundException(booking.car_id)
+    
+    if not car.is_available:
+        raise booking_exceptions.CarNotAvailableException(booking.car_id)
+    
+    if does_bookings_overlap(booking.car_id, booking.start_date, booking.end_date, db):
+        raise booking_exceptions.BookingOverlapException(booking.car_id)
+    
+    total_cost = calculate_total_cost(car.price_per_day, booking.start_date, booking.end_date)
+    
+    currency_converter_client = get_currency_converter_client_instance()
+    exchange_rate = currency_converter_client.get_currency_rate('USD', booking.currency_code.value)
+    
+    new_booking = BookingDB(
+        user_id=user_id,
+        car_id=booking.car_id,
+        start_date=booking.start_date,
+        end_date=booking.end_date,
+        planned_pickup_time=booking.planned_pickup_time,  # Store time in UTC (without timezone)
+        total_cost=total_cost,
+        currency_code=booking.currency_code,
+        exchange_rate=exchange_rate,
+        status=BookingStatus.PLANNED
+    )
+
+    db.add(new_booking)
+    db.commit()
+    db.refresh(new_booking)
+
+    return new_booking
 
 def update_booking(booking_id: int, booking_update: BookingUpdate, db: Session):
     # Get and validate booking
