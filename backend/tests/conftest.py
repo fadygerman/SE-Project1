@@ -1,3 +1,4 @@
+import os
 from datetime import date, time
 from decimal import Decimal
 
@@ -6,6 +7,7 @@ from fastapi import Depends, HTTPException
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from testcontainers.postgres import PostgresContainer
 
 from database import get_db
 from main import app
@@ -14,17 +16,53 @@ from models.db_models import Base, Booking, BookingStatus, Car, User, UserRole
 from services.auth_service import get_current_user, require_role
 
 # Create test database
-SQLALCHEMY_TEST_DATABASE_URL = "sqlite:///./test.db"
-engine = create_engine(SQLALCHEMY_TEST_DATABASE_URL, connect_args={"check_same_thread": False})
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+
+# PostgreSQL container fixture
+@pytest.fixture(scope="session")
+def postgres_container():
+    """
+    Start a PostgreSQL container using testcontainers and configure environment variables
+    """
+    # Set container configuration
+    postgres_user = "postgres"
+    postgres_password = "postgres"
+    postgres_db = "car_rental_test"
+    
+    postgres = PostgresContainer(
+        "postgres:16-alpine",
+        user=postgres_user,
+        password=postgres_password,
+        dbname=postgres_db
+    )
+    
+    # Start the container
+    postgres.start()
+    
+    # Set environment variables for the database connection
+    os.environ["DB_HOST"] = postgres.get_container_host_ip()
+    os.environ["DB_PORT"] = postgres.get_exposed_port(5432)
+    os.environ["DB_USERNAME"] = postgres_user
+    os.environ["DB_PASSWORD"] = postgres_password
+    os.environ["DB_NAME"] = postgres_db
+    
+    # Create the connection URL for SQLAlchemy
+    db_url = f"postgresql://{postgres_user}:{postgres_password}@{postgres.get_container_host_ip()}:{postgres.get_exposed_port(5432)}/{postgres_db}"
+    
+    yield db_url
+    
+    # Stop the container after tests are done
+    postgres.stop()
 
 # Override the get_db dependency
 @pytest.fixture
-def test_db():
+def test_db(postgres_container):
     # Create the test database and tables
+    engine = create_engine(postgres_container)
     Base.metadata.create_all(bind=engine)
-    db = TestingSessionLocal()
+    testing_session_local = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     
+    db = testing_session_local()
     try:
         yield db
     finally:

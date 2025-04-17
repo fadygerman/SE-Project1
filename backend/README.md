@@ -51,10 +51,12 @@ backend/
    ```
    pip install -r requirements.txt
    ```
-4. Initialize and seed the database:
+4. Start the database using Docker Compose:
    ```
-   python db_seed.py
+   docker-compose up -d
    ```
+   This will start a PostgreSQL database and automatically initialize it with sample data.
+
 5. Start development server:
    ```
    uvicorn main:app --reload
@@ -76,6 +78,10 @@ backend/
 
 ## Testing
 
+### Requirements
+- Docker must be installed on your system to run tests
+  - as the tests use PostgreSQL containers via the `testcontainers` package.
+
 ### Running Tests
 The project uses pytest for automated testing. To run the tests:
 
@@ -89,7 +95,6 @@ python -m pytest --cov=. --cov-report=html
 # Run specific test file
 python -m pytest tests/test_booking_routes.py
 ```
-
 ### Test Structure
 Tests are organized using pytest class-based structure for better organization:
 
