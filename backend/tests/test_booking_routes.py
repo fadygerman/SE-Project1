@@ -566,7 +566,7 @@ class TestBookingRetrieval:
         
     def test_get_my_bookings(self, auth_client, test_data):
         """Test getting current user's bookings"""
-        response = auth_client.get("/api/v1/bookings/my-bookings")
+        response = auth_client.get("/api/v1/bookings/my")
         
         # Check status code
         assert response.status_code == status.HTTP_200_OK
@@ -613,7 +613,7 @@ class TestBookingRetrieval:
         app.dependency_overrides[get_current_user] = override_get_current_user
         
         try:
-            response = client.get("/api/v1/bookings/my-bookings")
+            response = client.get("/api/v1/bookings/my")
             
             # Check status code
             assert response.status_code == status.HTTP_200_OK

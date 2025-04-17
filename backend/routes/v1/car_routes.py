@@ -27,7 +27,7 @@ async def get_cars(
         )
     ] = Currency.USD.value,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)  # Require authentication
+    _=Depends(get_current_user)  # Require authentication
 ):
     try:
         return car_service.get_all_cars(db, currency_code)

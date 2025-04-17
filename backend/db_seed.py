@@ -52,7 +52,7 @@ def seed_data():
             email="robert.johnson@example.com", 
             phone_number="+14155552673", 
             cognito_id="cognito_sample_id_3",
-            role=UserRole.STAFF  # Staff user
+            role=UserRole.USER
         ),
         User(
             first_name="Emily", 
@@ -188,7 +188,7 @@ def seed_data():
         ),
         # Canceled booking
         Booking(
-            user_id=users[2].id,  # Robert Johnson (staff)
+            user_id=users[2].id,  # Robert Johnson (regular user)
             car_id=cars[5].id,    # BMW X5
             start_date=today + timedelta(days=5),
             end_date=today + timedelta(days=10),

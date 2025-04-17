@@ -1,12 +1,14 @@
-from fastapi import APIRouter, Body, Depends, HTTPException, status
-from sqlalchemy.orm import Session
 from typing import List
 
+from fastapi import APIRouter, Body, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+
 from database import get_db
-from models.db_models import Booking as BookingDB, User, UserRole
+from exceptions.bookings import *
+from models.db_models import Booking as BookingDB
+from models.db_models import User, UserRole
 from models.pydantic.booking import Booking, BookingCreate, BookingUpdate
 from services import booking_service
-from exceptions.bookings import *
 from services.auth_service import get_booking_with_permission_check, get_current_user, require_role
 
 router = APIRouter(
@@ -24,7 +26,7 @@ async def get_bookings(
     return bookings
 
 # Get user's own bookings
-@router.get("/my-bookings", response_model=List[Booking])
+@router.get("/my", response_model=List[Booking])
 async def get_my_bookings(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
