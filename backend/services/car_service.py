@@ -1,5 +1,5 @@
-from decimal import Decimal
 from typing import List, Optional
+import logging
 
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
@@ -132,12 +132,12 @@ def get_filtered_cars(
                 currency = Currency(currency_code)
                 converter = get_currency_converter_client_instance()
                 car.price_per_day = converter.convert('USD', currency.value, car.price_per_day)
-            except ValueError:
-                # Invalid currency, use USD
-                pass
-            except Exception:
-                # If currency conversion fails, use USD price
-                pass
+            except ValueError as ve:
+                # Log invalid currency error and use USD
+                logging.warning(f"Invalid currency code '{currency_code}': {ve}")
+            except Exception as e:
+                # Log general conversion failure and use USD price
+                logging.error(f"Currency conversion failed for '{currency_code}': {e}")
                 
         cars.append(car)
     
