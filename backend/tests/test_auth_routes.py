@@ -102,28 +102,36 @@ class TestAuthEdgeCases:
     """Tests for edge cases and error handling in authentication system"""
     
     @pytest.mark.asyncio
+    @mock.patch('services.auth_service.logger')
     @mock.patch('services.auth_service.verify_cognito_jwt')
-    async def test_db_error_during_user_retrieval(self, mock_verify_jwt, test_db):
+    async def test_db_error_during_user_retrieval(self, mock_verify_jwt, mock_logger, test_db):
         """Test handling of database error during user retrieval"""
         # Arrange: Mock JWT validation to return valid token payload
         mock_verify_jwt.return_value = {
             "sub": "test-cognito-id",
             "email": "test@example.com"
         }
-        
+        db_error_message = "Database connection error"
+    
         # Mock database session to raise exception during query
         with mock.patch('sqlalchemy.orm.Session.query') as mock_query:
-            mock_query.side_effect = Exception("Database connection error")
-            
-            # Create fake credentials
+            mock_query.side_effect = Exception(db_error_message)
             credentials = HTTPAuthorizationCredentials(scheme="Bearer", credentials="test-token")
-            
-            # Act & Assert: Should handle DB error gracefully
+
+            # Expect HTTPException 500
             with pytest.raises(HTTPException) as excinfo:
                 await get_current_user(credentials, test_db)
-            
-            assert excinfo.value.status_code == 401
-            assert "Authentication failed" in str(excinfo.value.detail)
+
+            # Assert status code 500 and detail
+            assert excinfo.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+            assert "An internal error occurred during authentication." in excinfo.value.detail
+
+            # Assert logger was called
+            mock_logger.error.assert_called_once()
+            args, kwargs = mock_logger.error.call_args
+            assert "Unexpected error during user authentication/creation" in args[0]
+            assert db_error_message in str(args[1])
+            assert kwargs.get('exc_info') is True
     
     @pytest.mark.parametrize("jwt_error, expected_message", [
         (jwt.ExpiredSignatureError("Token expired"), "Invalid or expired token"),
@@ -146,14 +154,21 @@ class TestAuthEdgeCases:
     @mock.patch('services.auth_service.verify_cognito_jwt')
     def test_malformed_token(self, mock_verify_jwt, client):
         """Test handling of malformed token"""
-        # Act: Send request with malformed token
+        # Arrange: Configure mock to raise InvalidTokenException for the specific token
+        mock_verify_jwt.side_effect = InvalidTokenException
+
+        # Act: Send request with the token that triggers the exception
         response = client.get(
-            "/api/v1/users/me/profile",
+            "/api/v1/users/me/profile", # Or any other protected route
             headers={"Authorization": "Bearer malformed.token.here"}
         )
         
         # Assert: Should return 401 Unauthorized
-        assert response.status_code == 401
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        # Optionally check the detail message if needed
+        assert "Invalid or expired token" in response.json().get("detail", "")
+        # Ensure the mock was called with the specific token
+        mock_verify_jwt.assert_called_with("malformed.token.here")
         
     @mock.patch('services.auth_service.verify_cognito_jwt')
     def test_create_user_with_minimal_valid_data(self, mock_verify_jwt, test_db):

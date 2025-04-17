@@ -1,3 +1,7 @@
+import dotenv
+
+dotenv.load_dotenv()
+
 from fastapi import FastAPI
 from routes.v1 import car_routes, user_routes, booking_routes, auth_routes
 
@@ -28,8 +32,5 @@ app.include_router(auth_routes.router, prefix="/api/v1")
 # Run the application
 if __name__ == "__main__":
     import uvicorn
-    import dotenv
-
-    dotenv.load_dotenv()
 
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)

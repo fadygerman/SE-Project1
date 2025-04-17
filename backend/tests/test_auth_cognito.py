@@ -16,8 +16,9 @@ class TestAdvancedAuthScenarios:
     """Advanced tests for authentication edge cases"""
     
     @pytest.mark.asyncio
+    @patch('services.auth_service.logger')
     @patch('services.auth_service.verify_cognito_jwt')
-    async def test_db_error_during_user_lookup(self, mock_verify_jwt, test_db):
+    async def test_db_error_during_user_lookup(self, mock_verify_jwt, mock_logger, test_db):
         """Test handling of database errors during user lookup"""
         # Mock valid JWT payload
         mock_verify_jwt.return_value = {
@@ -30,19 +31,30 @@ class TestAdvancedAuthScenarios:
         
         # Create mock credentials
         mock_credentials = HTTPAuthorizationCredentials(scheme="Bearer", credentials="valid.jwt.token")
-        
+        db_error_message = "Database connection error"
+
         # Simulate database error during query
-        with patch.object(test_db, 'query', side_effect=Exception("Database connection error")):
-            # Should raise HTTPException with auth failed message
+        with patch.object(test_db, 'query', side_effect=Exception(db_error_message)):
+            # Expect HTTPException 500
             with pytest.raises(HTTPException) as exc_info:
                 await get_current_user(mock_credentials, test_db)
-            
-            assert exc_info.value.status_code == 401
-            assert "Authentication failed" in exc_info.value.detail
+
+            # Assert status code 500 and detail
+            assert exc_info.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+            assert "An internal error occurred during authentication." in exc_info.value.detail
+
+            # Assert logger was called
+            mock_logger.error.assert_called_once()
+            args, kwargs = mock_logger.error.call_args
+            assert "Unexpected error during user authentication/creation" in args[0]
+            assert db_error_message in str(args[1])
+            assert kwargs.get('exc_info') is True
+
 
     @pytest.mark.asyncio
+    @patch('services.auth_service.logger')
     @patch('services.auth_service.verify_cognito_jwt')
-    async def test_db_commit_error_handling(self, mock_verify_jwt, test_db):
+    async def test_db_commit_error_handling(self, mock_verify_jwt, mock_logger, test_db): 
         """Test handling of database commit error during user creation"""
         # Set up mock for new user creation that fails on commit
         mock_verify_jwt.return_value = {
@@ -54,14 +66,25 @@ class TestAdvancedAuthScenarios:
         }
         
         mock_credentials = HTTPAuthorizationCredentials(scheme="Bearer", credentials="valid.jwt.token")
-        
+        commit_error_message = "Commit failed"
+
         # Patch db.commit to raise exception
-        with patch.object(test_db, 'commit', side_effect=Exception("Commit failed")):
+        with patch.object(test_db, 'commit', side_effect=Exception(commit_error_message)):
+            # Expect HTTPException 500
             with pytest.raises(HTTPException) as exc_info:
                 await get_current_user(mock_credentials, test_db)
-            
-            assert exc_info.value.status_code == 401
-            assert "Authentication failed" in exc_info.value.detail
+
+            # Assert status code 500 and detail
+            assert exc_info.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+            assert "An internal error occurred during authentication." in exc_info.value.detail
+
+            # Assert logger was called
+            mock_logger.error.assert_called_once()
+            args, kwargs = mock_logger.error.call_args
+            assert "Unexpected error during user authentication/creation" in args[0]
+            assert commit_error_message in str(args[1])
+            assert kwargs.get('exc_info') is True
+
 
     @pytest.mark.parametrize("jwt_error,expected_detail", [
         (jwt.ExpiredSignatureError("Token expired"), "Invalid or expired token"),
@@ -467,15 +490,28 @@ class TestAdvancedAuthScenarios:
         assert "phone_number is missing or invalid" in str(exc_info.value)
 
     @pytest.mark.asyncio
+    @patch('services.auth_service.logger')
     @patch('services.auth_service.verify_cognito_jwt')
-    async def test_get_current_user_authentication_failed(self, mock_verify_jwt, test_db):
+    async def test_get_current_user_authentication_failed(self, mock_verify_jwt, mock_logger, test_db):
         """Test generic authentication failure (unexpected error)"""
-        mock_verify_jwt.side_effect = Exception("Unexpected error")
+        error_message = "Unexpected error"
+        mock_verify_jwt.side_effect = Exception(error_message)
         mock_credentials = HTTPAuthorizationCredentials(scheme="Bearer", credentials="valid.jwt.token")
+
+        # Expect HTTPException 500
         with pytest.raises(HTTPException) as exc_info:
             await get_current_user(mock_credentials, test_db)
-            
-        assert "Authentication failed" in str(exc_info.value)
+
+        # Assert status code 500 and detail
+        assert exc_info.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+        assert "An internal error occurred during authentication." in exc_info.value.detail
+
+        # Assert logger was called
+        mock_logger.error.assert_called_once()
+        args, kwargs = mock_logger.error.call_args
+        assert "Unexpected error during user authentication/creation" in args[0]
+        assert error_message in str(args[1])
+        assert kwargs.get('exc_info') is True
 
     @patch('services.cognito_service.jwt.decode')
     @patch('services.cognito_service.PyJWKClient')

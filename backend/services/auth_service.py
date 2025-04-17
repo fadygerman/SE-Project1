@@ -2,6 +2,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jwt import PyJWTError
 from sqlalchemy.orm import Session
+import logging
 
 from database import get_db
 from models.db_models import User, UserRole
@@ -15,6 +16,8 @@ from services.cognito_service import verify_cognito_jwt
 
 # Security scheme for JWT Bearer tokens
 security = HTTPBearer()
+
+logger = logging.getLogger(__name__)
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
@@ -87,9 +90,11 @@ async def get_current_user(
             detail=e.message
         )
     except Exception as e:
+        logger.error("Unexpected error during user authentication/creation: %s", e, exc_info=True)
+        # Raise a 500 Internal Server Error for unexpected issues
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication failed due to an internal error"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An internal error occurred during authentication."
         )
 
 # Role-based access control
