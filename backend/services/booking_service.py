@@ -1,8 +1,9 @@
 from datetime import date
 from decimal import Decimal
-from typing import List
+from typing import List, Optional
 
 from fastapi import Depends, HTTPException, status
+from sqlalchemy import and_, or_, desc, func
 from sqlalchemy.orm import Session
 
 import exceptions.bookings as booking_exceptions
@@ -14,6 +15,7 @@ from models.db_models import Car as CarDB
 from models.db_models import User as UserDB
 from models.db_models import UserRole
 from models.pydantic.booking import Booking, BookingCreate, BookingUpdate
+from models.pydantic.pagination import PaginationParams, BookingFilterParams, SortParams, PaginatedResponse
 from models.pydantic.user import User
 from services.auth_service import get_current_user
 
@@ -280,3 +282,102 @@ def apply_booking_updates(booking: BookingDB, update_data: dict, db: Session):
     db.commit()
     db.refresh(booking)
     return booking
+
+def get_filtered_bookings(
+    db: Session,
+    pagination: PaginationParams,
+    filters: Optional[BookingFilterParams] = None,
+    user_id: Optional[int] = None,
+    sort_params: Optional[SortParams] = None
+) -> PaginatedResponse[Booking]:
+    """
+    Get bookings with filtering, sorting, and pagination.
+    
+    Args:
+        db: Database session
+        pagination: Pagination parameters
+        filters: Optional filter parameters
+        user_id: Optional user ID to filter by (for "my bookings")
+        sort_params: Optional sorting parameters
+        
+    Returns:
+        PaginatedResponse containing bookings and pagination metadata
+    """
+    # Start with base query
+    query = db.query(BookingDB)
+    
+    # Apply user filter if provided (for "my bookings")
+    if user_id is not None:
+        query = query.filter(BookingDB.user_id == user_id)
+    
+    # Apply filters if provided
+    if filters:
+        if filters.status:
+            try:
+                # Try to match with BookingStatus enum
+                status = BookingStatus(filters.status)
+                query = query.filter(BookingDB.status == status)
+            except ValueError:
+                # If not a valid enum value, filter will return empty result
+                pass
+                
+        if filters.car_id:
+            query = query.filter(BookingDB.car_id == filters.car_id)
+            
+        if filters.start_date_from:
+            query = query.filter(BookingDB.start_date >= filters.start_date_from)
+            
+        if filters.start_date_to:
+            query = query.filter(BookingDB.start_date <= filters.start_date_to)
+            
+        if filters.end_date_from:
+            query = query.filter(BookingDB.end_date >= filters.end_date_from)
+            
+        if filters.end_date_to:
+            query = query.filter(BookingDB.end_date <= filters.end_date_to)
+    
+    # Apply sorting if provided
+    if sort_params:
+        # Check if the attribute exists on the BookingDB model
+        if hasattr(BookingDB, sort_params.sort_by):
+            sort_column = getattr(BookingDB, sort_params.sort_by)
+            
+            if sort_params.sort_order == "desc":
+                sort_column = desc(sort_column)
+                
+            query = query.order_by(sort_column)
+        else:
+            # Default to sorting by ID if column doesn't exist
+            query = query.order_by(BookingDB.id)
+    else:
+        # Default sort by ID
+        query = query.order_by(BookingDB.id)
+    
+    # Count total items for pagination metadata
+    total_items = query.count()
+    
+    # Calculate total pages
+    total_pages = (total_items + pagination.page_size - 1) // pagination.page_size if total_items > 0 else 0
+    
+    # Apply pagination
+    offset = (pagination.page - 1) * pagination.page_size
+    query = query.offset(offset).limit(pagination.page_size)
+    
+    # Execute query
+    bookings_db = query.all()
+    
+    # Convert to Pydantic models
+    bookings = []
+    for booking_db in bookings_db:
+        booking = Booking.model_validate(booking_db)
+        booking.total_cost = convert_booking_currency(booking.total_cost, booking.exchange_rate)
+        bookings.append(booking)
+    
+    # Return paginated response
+    return PaginatedResponse[Booking](
+        items=bookings,
+        total=total_items,
+        page=pagination.page,
+        page_size=pagination.page_size,
+        pages=total_pages
+    )
