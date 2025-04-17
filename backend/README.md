@@ -51,13 +51,15 @@ backend/
    ```
    pip install -r requirements.txt
    ```
-4. Start the database using Docker Compose:
+4. Copy `.env.example` file in the root directory and set the values.
+   - default values do not need to be changed for local development with PostgreSQL
+5. Start the database using Docker Compose:
    ```
-   docker-compose up -d
+   docker compose up
    ```
    This will start a PostgreSQL database and automatically initialize it with sample data.
 
-5. Start development server:
+6. Start development server:
    ```
    uvicorn main:app --reload
    ```
