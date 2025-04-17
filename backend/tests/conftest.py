@@ -188,6 +188,3 @@ def admin_client(client, test_data):
 
     # Restore original dependency overrides after the test
     app.dependency_overrides = original_overrides
-    
-    # Restore original dependencies and function
-    app.dependency_overrides = original_overrides
