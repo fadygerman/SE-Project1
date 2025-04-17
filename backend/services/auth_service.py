@@ -1,5 +1,6 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from jwt import PyJWTError
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -7,7 +8,8 @@ from models.db_models import User, UserRole
 from exceptions.auth import (
     MissingUserIdentifierException, 
     UserNotRegisteredException,
-    IncompleteUserDataException
+    IncompleteUserDataException,
+    InvalidTokenException
 )
 from services.cognito_service import verify_cognito_jwt
 
@@ -70,17 +72,16 @@ async def get_current_user(
         return user
     except HTTPException:
         raise
-    except MissingUserIdentifierException as e:
+    except (PyJWTError, InvalidTokenException) as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=e.message
+            detail="Invalid or expired token" # Consistent detail for all token errors
         )
-    except UserNotRegisteredException as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=e.message
-        )
-    except IncompleteUserDataException as e:
+    except (
+        MissingUserIdentifierException, 
+        UserNotRegisteredException,
+        IncompleteUserDataException
+        ) as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=e.message
@@ -88,7 +89,7 @@ async def get_current_user(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication failed"
+            detail="Authentication failed due to an internal error"
         )
 
 # Role-based access control
