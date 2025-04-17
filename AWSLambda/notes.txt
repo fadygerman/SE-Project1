@@ -1,0 +1,7 @@
+//MM20250417: This is my protocol, on what I did:
+I followed the descriptions in https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/getting-started-step-1.html
+doing the local installation of the dynamoDB database in Java. I will gradually read and refactor the solution in
+/backend so that we arrive at an implementation for AWS lambdas.
+
+ + First attempt at modelling the existing databases into dynamoDB tables.
+  . unclear, which data type shall be used for monetary values
