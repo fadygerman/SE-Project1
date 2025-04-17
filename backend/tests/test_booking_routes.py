@@ -1,10 +1,12 @@
 from datetime import date, timedelta
-import pytest
-from fastapi import status
 from unittest.mock import patch
 
-from models.db_models import Booking, BookingStatus
+import pytest
+from fastapi import status
+
 from main import app
+from models.db_models import Booking, BookingStatus
+
 
 class TestBookingCreation:
     """Tests related to creating bookings"""
@@ -551,7 +553,6 @@ class TestBookingStatusTransitions:
 class TestBookingRetrieval:
     """Tests related to retrieving bookings"""
     
-    @pytest.mark.skip(reason="Requires proper admin role mocking")
     def test_get_all_bookings(self, admin_client, test_data):
         """Test getting all bookings as admin"""
         response = admin_client.get("/api/v1/bookings/")

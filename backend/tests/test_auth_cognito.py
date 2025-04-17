@@ -1,16 +1,17 @@
+import asyncio
 import binascii
+from unittest.mock import MagicMock, patch
+
+import jwt
 import pytest
 from fastapi import HTTPException, status
-from unittest.mock import MagicMock, patch
-import jwt
 from fastapi.security import HTTPAuthorizationCredentials
-import asyncio
 
-from services.auth_service import get_current_user, require_role, get_booking_with_permission_check
-from services.cognito_service import verify_cognito_jwt
 from exceptions.auth import InvalidTokenException
+from models.db_models import Booking, BookingStatus, User, UserRole
+from services.auth_service import get_booking_with_permission_check, get_current_user, require_role
+from services.cognito_service import verify_cognito_jwt
 
-from models.db_models import User, UserRole, BookingStatus, Booking
 
 class TestAdvancedAuthScenarios:
     """Advanced tests for authentication edge cases"""
@@ -283,9 +284,6 @@ class TestAdvancedAuthScenarios:
             try:
                 # success_mock and credentials are now defined in the outer scope
                 with patch('services.auth_service.verify_cognito_jwt', success_mock):
-                    # Remove the patch context manager for get_db
-                    # with patch('services.auth_service.get_db', return_value=db_mock_instance):
-                    # Explicitly pass db_mock_instance
                     user = await get_current_user(credentials=credentials, db=db_mock_instance)
                     return user
             except HTTPException as http_exc:
@@ -300,9 +298,6 @@ class TestAdvancedAuthScenarios:
             try:
                 # failure_mock and credentials are now defined in the outer scope
                 with patch('services.auth_service.verify_cognito_jwt', failure_mock):
-                     # Remove the patch context manager for get_db
-                     # with patch('services.auth_service.get_db', return_value=db_mock_instance):
-                     # Explicitly pass db_mock_instance
                      await get_current_user(credentials=credentials, db=db_mock_instance)
                      return "ERROR: Failure mock did not raise"
             except HTTPException as http_exc:

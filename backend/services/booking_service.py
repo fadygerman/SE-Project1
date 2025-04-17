@@ -11,22 +11,8 @@ from models.db_models import Car as CarDB
 from models.pydantic.booking import BookingCreate, BookingUpdate
 
 
-def create_booking(booking: BookingCreate, user_id: int, db: Session):
-    """Creates a new booking in the database.
-
-    Validates car availability and checks for overlapping bookings before
-    creating the new booking record. Calculates the total cost based on
-    car price and duration, and fetches the currency exchange rate.
-
-    Args:
-        booking_data: The Pydantic model containing the booking creation details
-                      (car_id, start_date, end_date, planned_pickup_time, currency_code).
-        user_id: The ID of the user creating the booking.
-        db: The database session dependency.
-
-    Returns:
-        The newly created BookingDB object.
-    """   
+def create_booking(booking: BookingCreate, user_id: int, db: Session) -> BookingDB:
+     
     car = db.query(CarDB).filter(CarDB.id == booking.car_id).first()
     if not car:
         raise booking_exceptions.NoCarFoundException(booking.car_id)

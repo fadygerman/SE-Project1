@@ -1,11 +1,12 @@
 import pytest
 from fastapi import status
+
 from main import app
+
 
 class TestUserRetrieval:
     """Tests related to retrieving users"""
     
-    @pytest.mark.skip(reason="Requires proper admin role mocking")
     def test_get_all_users(self, admin_client, test_data):
         """Test getting all users"""
         response = admin_client.get("/api/v1/users/")
