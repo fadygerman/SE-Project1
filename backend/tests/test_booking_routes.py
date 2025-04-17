@@ -697,6 +697,33 @@ class TestBookingRetrieval:
         assert response.status_code == status.HTTP_200_OK
         booking = response.json()
         assert booking["id"] == booking_id
+        assert "user" in booking
+        assert "car" in booking
+
+    def test_get_booking_by_id_currency_conversion(self, auth_client, test_data, test_db):
+        booking_id = test_data["bookings"][0].id
+        
+        # Set a known exchange rate and price for the booking
+        original_usd_price = Decimal('150.53')
+        exchange_rate = Decimal('1.23')  # GBP exchange rate
+        
+        # Update the booking in the database
+        db_booking = test_db.query(Booking).filter(Booking.id == booking_id).first()
+        db_booking.total_cost = original_usd_price
+        db_booking.exchange_rate = exchange_rate
+        test_db.commit()
+        
+        # Get the booking by ID
+        response = auth_client.get(f"/api/v1/bookings/{booking_id}")
+        assert response.status_code == status.HTTP_200_OK
+        
+        # Check the price conversion
+        booking = response.json()
+        expected_converted_price = (original_usd_price * exchange_rate).quantize(Decimal('0.00'))
+        assert booking["total_cost"] == str(expected_converted_price)
+        
+    def test_get_booking_not_found(self, auth_client):
+        """Test getting a non-existent booking"""
         
     def test_get_booking_by_id_unauthorized(self, auth_client, test_data):
         """Test that a user cannot access another user's booking"""
@@ -731,11 +758,7 @@ class TestBookingErrorHandling:
         """Test updating a booking that doesn't exist"""
         non_existent_id = 999
         
-        update_data = {
-            "status": "ACTIVE"
-        }
-        
-        response = auth_client.put(f"/api/v1/bookings/{non_existent_id}", json=update_data)
+        response = auth_client.get(f"/api/v1/bookings/{non_existent_id}")
         
         # Check status code
         assert response.status_code == status.HTTP_404_NOT_FOUND

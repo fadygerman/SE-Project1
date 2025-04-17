@@ -1,14 +1,74 @@
 from datetime import date
 from decimal import Decimal
+from typing import List
 
+from fastapi import Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 import exceptions.bookings as booking_exceptions
 from currency_converter.client import get_currency_converter_client_instance
+from database import get_db
 from models.db_models import Booking as BookingDB
 from models.db_models import BookingStatus
 from models.db_models import Car as CarDB
-from models.pydantic.booking import BookingCreate, BookingUpdate
+from models.db_models import User as UserDB
+from models.db_models import UserRole
+from models.pydantic.booking import Booking, BookingCreate, BookingUpdate
+from models.pydantic.user import User
+from services.auth_service import get_current_user
+
+
+def get_all_bookings(db: Session) -> List[Booking]:
+    bookings_db = db.query(BookingDB).all()
+    bookings = []
+    
+    for booking_db in bookings_db:
+        booking = Booking.model_validate(booking_db)
+        booking.total_cost = convert_booking_currency(booking.total_cost, booking.exchange_rate)
+        bookings.append(booking)
+    
+    return bookings
+
+async def get_booking_with_permission_check(
+    booking_id: int,
+    db: Session = Depends(get_db),
+    current_user_db: UserDB = Depends(get_current_user)
+):
+    """Check if the user has permission to access the specified booking"""
+    from models.db_models import Booking as BookingDB
+    
+    try:
+        booking_db = get_booking_by_id(booking_id, db)
+    except booking_exceptions.BookingNotFoundException as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=e.message
+        )
+    
+    booking = Booking.model_validate(booking_db)
+    current_user = User.model_validate(current_user_db)
+    # Check if it's the user's booking or if they have admin role
+    if booking.user_id != current_user.id and current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, 
+            detail="You can only access your own bookings"
+        )
+    
+    return booking
+
+def get_booking_by_id(booking_id: int, db: Session) -> Booking:
+    booking_db = db.query(BookingDB).filter(BookingDB.id == booking_id).first()
+    
+    if booking_db is None:
+        raise booking_exceptions.BookingNotFoundException(booking_id)
+    
+    booking = Booking.model_validate(booking_db)
+    booking.total_cost = convert_booking_currency(booking.total_cost, booking.exchange_rate)
+    return booking
+
+
+def convert_booking_currency(total_cost_in_usd: Decimal, exchange_rate: Decimal) -> Decimal:
+    return (total_cost_in_usd * exchange_rate).quantize(Decimal('0.00'))
 
 
 def create_booking(booking: BookingCreate, user_id: int, db: Session) -> BookingDB:

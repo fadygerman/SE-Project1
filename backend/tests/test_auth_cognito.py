@@ -1,5 +1,8 @@
 import asyncio
 import binascii
+from datetime import date, time, timedelta
+from decimal import Decimal
+from time import time as time_func
 from unittest.mock import MagicMock, patch
 
 import jwt
@@ -8,8 +11,10 @@ from fastapi import HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials
 
 from exceptions.auth import InvalidTokenException
+from models.currencies import Currency
 from models.db_models import Booking, BookingStatus, User, UserRole
-from services.auth_service import get_booking_with_permission_check, get_current_user, require_role
+from services.auth_service import get_current_user, require_role
+from services.booking_service import get_booking_with_permission_check
 from services.cognito_service import verify_cognito_jwt
 
 
@@ -144,8 +149,24 @@ class TestAdvancedAuthScenarios:
     async def test_role_checking_with_multiple_roles(self):
         """Test role-based access with multiple allowed roles"""
         # Create users with different roles
-        admin_user = User(id=1, email="admin@example.com", role=UserRole.ADMIN)
-        standard_user = User(id=2, email="customer@example.com", role=UserRole.USER)
+        admin_user = User(
+            id=1, 
+            email="admin@example.com", 
+            first_name="Admin",
+            last_name="User",
+            phone_number="12345678",
+            cognito_id="admin-cognito-id",
+            role=UserRole.ADMIN
+        )
+        standard_user = User(
+            id=2, 
+            email="customer@example.com", 
+            first_name="Standard",
+            last_name="User",
+            phone_number="87654321",
+            cognito_id="standard-cognito-id",
+            role=UserRole.USER
+        )
         
         # Create role checker for multiple roles
         role_checker = require_role([UserRole.ADMIN, UserRole.USER])
@@ -159,12 +180,47 @@ class TestAdvancedAuthScenarios:
     async def test_get_booking_with_permission_check_complex(self, mock_get_current_user, test_db):
         """Test complex permission scenarios with booking access"""
         # Create test users
-        admin = User(id=1, email="admin@example.com", role=UserRole.ADMIN)
-        owner = User(id=2, email="owner@example.com", role=UserRole.USER)
-        other_user = User(id=3, email="other@example.com", role=UserRole.USER)
+        admin = User(
+            id=1, 
+            email="admin@example.com", 
+            first_name="Admin",
+            last_name="User",
+            phone_number="12345678",
+            cognito_id="admin-cognito-id",
+            role=UserRole.ADMIN
+        )
+        owner = User(
+            id=2, 
+            email="owner@example.com", 
+            first_name="Owner",
+            last_name="User",
+            phone_number="87654321",
+            cognito_id="owner-cognito-id",
+            role=UserRole.USER
+        )
+        other_user = User(
+            id=3, 
+            email="other@example.com", 
+            first_name="Other",
+            last_name="User",
+            phone_number="13579246",
+            cognito_id="other-cognito-id",
+            role=UserRole.USER
+        )
         
         # Create a test booking owned by 'owner'
-        booking = Booking(id=123, user_id=owner.id, status=BookingStatus.ACTIVE)
+        booking = Booking(
+            id=123,
+            user_id=owner.id,
+            car_id=1,
+            start_date=date.today() + timedelta(days=1),
+            end_date=date.today() + timedelta(days=10),
+            planned_pickup_time=time(10, 0, 0),
+            status=BookingStatus.ACTIVE,
+            currency_code=Currency.USD,
+            exchange_rate=Decimal('1.00'),
+            total_cost=Decimal('100.00')
+        )
         
         with patch.object(test_db, 'query') as mock_query:
             mock_query.return_value.filter.return_value.first.return_value = booking
@@ -172,12 +228,12 @@ class TestAdvancedAuthScenarios:
             # Admin should have access
             mock_get_current_user.return_value = admin
             result1 = await get_booking_with_permission_check(booking.id, test_db, admin)
-            assert result1 == booking
+            assert result1.id == booking.id
             
             # Owner should have access
             mock_get_current_user.return_value = owner
             result2 = await get_booking_with_permission_check(booking.id, test_db, owner)
-            assert result2 == booking
+            assert result2.id == booking.id
             
             # Other user should be denied
             mock_get_current_user.return_value = other_user
@@ -544,8 +600,15 @@ class TestAdvancedAuthScenarios:
     async def test_require_role_unauthorized(self):
         """Test role-based access control when unauthorized"""
         # Create a user with an insufficient role (e.g., USER)
-        user_with_insufficient_role = MagicMock(spec=User)
-        user_with_insufficient_role.role = UserRole.USER
+        user_with_insufficient_role = User(
+            id=3,
+            email="regular@example.com",
+            first_name="Regular",
+            last_name="User",
+            phone_number="12345678",
+            cognito_id="regular-cognito-id",
+            role=UserRole.USER
+        )
 
         # Create the dependency requiring ADMIN role
         admin_role_dependency = require_role([UserRole.ADMIN])
