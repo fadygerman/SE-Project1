@@ -325,16 +325,33 @@ def get_filtered_bookings(
             query = query.filter(BookingDB.car_id == filters.car_id)
             
         if filters.start_date_from:
-            query = query.filter(BookingDB.start_date >= filters.start_date_from)
+            try:
+                start_date_from = date.fromisoformat(filters.start_date_from)
+                query = query.filter(BookingDB.start_date >= start_date_from)
+            except ValueError:
+                # Use domain exception instead of HTTP exception
+                raise booking_exceptions.InvalidDateFormatException("start_date_from")
             
         if filters.start_date_to:
-            query = query.filter(BookingDB.start_date <= filters.start_date_to)
+            try:
+                start_date_to = date.fromisoformat(filters.start_date_to)
+                query = query.filter(BookingDB.start_date <= start_date_to)
+            except ValueError:
+                raise booking_exceptions.InvalidDateFormatException("start_date_to")
             
         if filters.end_date_from:
-            query = query.filter(BookingDB.end_date >= filters.end_date_from)
+            try:
+                end_date_from = date.fromisoformat(filters.end_date_from)
+                query = query.filter(BookingDB.end_date >= end_date_from)
+            except ValueError:
+                raise booking_exceptions.InvalidDateFormatException("end_date_from")
             
         if filters.end_date_to:
-            query = query.filter(BookingDB.end_date <= filters.end_date_to)
+            try:
+                end_date_to = date.fromisoformat(filters.end_date_to)
+                query = query.filter(BookingDB.end_date <= end_date_to)
+            except ValueError:
+                raise booking_exceptions.InvalidDateFormatException("end_date_to")
     
     # Apply sorting if provided
     if sort_params:
