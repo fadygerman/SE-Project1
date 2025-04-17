@@ -46,11 +46,9 @@ async def create_booking(
     db: Session = Depends(get_db), 
     current_user: User = Depends(get_current_user)
 ):
-    # Always use the authenticated user's ID for the booking
-    booking_data.user_id = current_user.id
     
     try:
-        return booking_service.create_booking(booking_data, db)
+        return booking_service.create_booking(booking_data, current_user.id, db)
     except NoCarFoundException as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -60,7 +58,6 @@ async def create_booking(
     except (
         CarNotAvailableException,
         BookingOverlapException,
-        BookingStartDateException
     ) as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

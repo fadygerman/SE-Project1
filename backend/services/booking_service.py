@@ -12,7 +12,7 @@ from models.db_models import Car as CarDB
 from models.pydantic.booking import BookingCreate, BookingUpdate
 
 
-def create_booking(booking: BookingCreate, db: Session):
+def create_booking(booking: BookingCreate, user_id: int, db: Session):
   car = db.query(CarDB).filter(CarDB.id == booking.car_id).first()
   if not car:
     raise booking_exceptions.NoCarFoundException(booking.car_id)
@@ -29,7 +29,7 @@ def create_booking(booking: BookingCreate, db: Session):
   exchange_rate = currency_converter_client.get_currency_rate('USD', booking.currency_code.value)
   
   new_booking = BookingDB(
-      user_id=booking.user_id,
+      user_id=user_id,
       car_id=booking.car_id,
       start_date=booking.start_date,
       end_date=booking.end_date,

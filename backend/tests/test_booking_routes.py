@@ -30,7 +30,6 @@ class TestBookingCreation:
         
         booking_data = {
             # No need to specify user_id as it will be taken from the authenticated user
-            "user_id": user_id,  # This is needed for now until we update the route
             "car_id": car_id,
             "start_date": str(start_date),
             "end_date": str(end_date),
