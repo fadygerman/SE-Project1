@@ -132,21 +132,24 @@ def get_filtered_cars(
     
     # Convert to Pydantic models with currency conversion if needed
     cars = []
+    converter = None
+    if currency_code != Currency.USD.value:
+        try:
+            currency = Currency(currency_code)  # This is already checked above, but kept for clarity
+            converter = get_currency_converter_client_instance()
+        except Exception as e:
+            logging.error(f"Failed to initialize currency converter for '{currency_code}': {e}")
+            raise CurrencyServiceUnavailableException(str(e))
+
+    # Now use the converter in the loop
     for car_db in cars_db:
         car = Car.model_validate(car_db)
         
         # Convert pricing if needed
-        if currency_code != Currency.USD.value:
+        if converter:
             try:
-                currency = Currency(currency_code)
-                converter = get_currency_converter_client_instance()
                 car.price_per_day = converter.convert('USD', currency.value, car.price_per_day)
-            except CurrencyServiceUnavailableException as e:
-                # Log but re-raise the exception
-                logging.error(f"Currency conversion failed for '{currency_code}': {e}")
-                raise
             except Exception as e:
-                # Log and raise as CurrencyServiceUnavailableException
                 logging.error(f"Currency conversion failed for '{currency_code}': {e}")
                 raise CurrencyServiceUnavailableException(str(e))
                 
