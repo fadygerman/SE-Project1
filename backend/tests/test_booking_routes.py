@@ -750,6 +750,16 @@ class TestBookingRetrieval:
         
     def test_get_booking_not_found(self, auth_client):
         """Test getting a non-existent booking"""
+        non_existent_booking_id = 99999  # ID that does not exist in the test data
+        response = auth_client.get(f"/api/v1/bookings/{non_existent_booking_id}")
+        
+        # Check status code
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        
+        # Check error message
+        error = response.json()
+        assert f"Booking with ID {non_existent_booking_id} not found" in error["detail"]
+        """Test getting a non-existent booking"""
         
     def test_get_booking_by_id_unauthorized(self, auth_client, test_data):
         """Test that a user cannot access another user's booking"""
