@@ -164,3 +164,38 @@ class TestBookingPagination:
         
         response = admin_client.get("/api/v1/bookings/?page_size=101")  # Exceeds maximum
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+    def test_invalid_date_format_handling(self, admin_client, setup_pagination_data):
+        """Test handling of invalid date format in filter parameters"""
+        # Test invalid start_date_from format
+        response = admin_client.get("/api/v1/bookings/?start_date_from=2024/04/15")
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        error = response.json()
+        assert "Invalid date format for 'start_date_from'" in error["detail"]
+        
+        # Test invalid start_date_to format
+        response = admin_client.get("/api/v1/bookings/?start_date_to=15-04-2024")
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "Invalid date format for 'start_date_to'" in response.json()["detail"]
+        
+        # Test invalid end_date_from format
+        response = admin_client.get("/api/v1/bookings/?end_date_from=April 15, 2024")
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "Invalid date format for 'end_date_from'" in response.json()["detail"]
+        
+        # Test invalid end_date_to format
+        response = admin_client.get("/api/v1/bookings/?end_date_to=15.04.2024")
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "Invalid date format for 'end_date_to'" in response.json()["detail"]
+
+    def test_invalid_date_format_in_my_bookings(self, auth_client, setup_pagination_data):
+        """Test handling of invalid date format in my bookings filter parameters"""
+        response = auth_client.get("/api/v1/bookings/my?start_date_from=not-a-date")
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "Invalid date format" in response.json()["detail"]
+
+    def test_multiple_filter_parameters_with_one_invalid(self, admin_client, setup_pagination_data):
+        """Test that invalid date format is caught even with multiple parameters"""
+        response = admin_client.get("/api/v1/bookings/?status=PLANNED&start_date_from=2024-04-15&end_date_to=invalid")
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "Invalid date format for 'end_date_to'" in response.json()["detail"]

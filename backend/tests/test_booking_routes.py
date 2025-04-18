@@ -623,8 +623,17 @@ class TestBookingRetrieval:
         # Check status code
         assert response.status_code == status.HTTP_200_OK
         
-        # Check response data
-        bookings = response.json()
+        # Check response data - should be a paginated response
+        response_data = response.json()
+        
+        # Verify the pagination structure
+        assert "items" in response_data
+        assert "page" in response_data
+        assert "page_size" in response_data
+        assert "total" in response_data
+        
+        # Extract the actual bookings from the 'items' field
+        bookings = response_data["items"]
         assert len(bookings) == 2
         
     def test_get_my_bookings(self, auth_client, test_data):
@@ -634,8 +643,16 @@ class TestBookingRetrieval:
         # Check status code
         assert response.status_code == status.HTTP_200_OK
         
+        # Should be a paginated response structure
+        response_data = response.json()
+        assert "items" in response_data
+        assert "page" in response_data
+        assert "page_size" in response_data
+        
+        # Extract the actual bookings from the 'items' field
+        bookings = response_data["items"]
+        
         # Should only contain bookings for the authenticated user
-        bookings = response.json()
         for booking in bookings:
             assert booking["user_id"] == test_data["users"][0].id
         
@@ -681,10 +698,19 @@ class TestBookingRetrieval:
             # Check status code
             assert response.status_code == status.HTTP_200_OK
             
-            # Should return empty list
-            bookings = response.json()
-            assert isinstance(bookings, list)
-            assert len(bookings) == 0
+            # Should return a paginated response with empty items list
+            response_data = response.json()
+            
+            # Check pagination structure
+            assert "items" in response_data
+            assert "page" in response_data
+            assert "page_size" in response_data
+            assert "total" in response_data
+            
+            # Check that items is an empty list
+            assert isinstance(response_data["items"], list)
+            assert len(response_data["items"]) == 0
+            
         finally:
             # Restore original overrides
             app.dependency_overrides = original_overrides
