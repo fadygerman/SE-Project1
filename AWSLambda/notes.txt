@@ -5,3 +5,14 @@ doing the local installation of the dynamoDB database in Java. I will gradually 
 
  + First attempt at modelling the existing databases into dynamoDB tables.
   . unclear, which data type shall be used for monetary values
+
+ - design data tables:
+  . e.g., bookings: primary hash key: car_id, secondary (global) key start date. Then use a Query in order to
+    retrieve the appropriate values.
+  . e.g., cars: primary hash key: car_id
+  . standard table class? DynamoDB Standard table class vs. DynamoDB Standard IA table class
+  . consider read size and capacity unit consumption! (transactional: 1.5; strongly consistent: 1; eventually consistent: 0.5;
+    --> logging?
+   > Query more efficient (financially and temporally) than single read requests
+
+read until Programming with DynamoDB/Programming with Python

@@ -3,17 +3,19 @@ import boto3
 
 from AWSLambda.database.BookingsTable import Bookings
 
-ddb = boto3.client('dynamodb', endpoint_url='http://localhost:8000')
-response = ddb.list_tables()
-print(response)
+ddb = boto3.resource('dynamodb', endpoint_url='http://localhost:8000')
 
-testTable = Bookings(ddb)
-
+BookingService = Bookings(ddb)
+print(BookingService)
+testTable = BookingService.create_table("testTableName")
+print(testTable)
+BookingService.delete_table(ddb)
+'''
 table = testTable.create_table("testTableName")
 print(table)
 testTable.delete_table()
 
-'''
+testTable.delete_table(ddb)
 
 BookingsTable = Bookings(dynamodb)
 

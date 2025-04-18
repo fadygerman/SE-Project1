@@ -39,9 +39,9 @@ class Bookings:
         self.table = None
 
     def delete_table(self, dyn_resource = None):
-        if dyn_resource is None:
+        if self.dyn_resource is None:
             dyn_resource = boto3.resource("dynamodb")
-        table = dyn_resource.Table("testTableName")
+        table = self.dyn_resource.Table("testTableName")
         table.delete()
 
     def create_table(self, table_name):
