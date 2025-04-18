@@ -49,7 +49,14 @@ async def get_bookings(
         end_date_to=end_date_to
     )
     sort_params = SortParams(sort_by=sort_by, sort_order=sort_order)
-    return booking_service.get_filtered_bookings(db, pagination, filters, sort_params=sort_params)
+    
+    try:
+        return booking_service.get_filtered_bookings(db, pagination, filters, sort_params=sort_params)
+    except InvalidDateFormatException as e:
+        raise HTTPException(
+            status_code=400,  # Using numeric value instead of status.HTTP_400_BAD_REQUEST
+            detail=e.message
+        )
 
 # Get user's own bookings with filtering and pagination
 @router.get("/my", response_model=PaginatedResponse[Booking])
@@ -80,9 +87,16 @@ async def get_my_bookings(
         end_date_to=end_date_to
     )
     sort_params = SortParams(sort_by=sort_by, sort_order=sort_order)
-    return booking_service.get_filtered_bookings(
-        db, pagination, filters, user_id=current_user.id, sort_params=sort_params
-    )
+    
+    try:
+        return booking_service.get_filtered_bookings(
+            db, pagination, filters, user_id=current_user.id, sort_params=sort_params
+        )
+    except InvalidDateFormatException as e:
+        raise HTTPException(
+            status_code=400,  # Using numeric value instead of status.HTTP_400_BAD_REQUEST
+            detail=e.message
+        )
 
 @router.get("/{booking_id}", response_model=Booking)
 async def get_booking(
@@ -136,14 +150,15 @@ async def update_booking(
         PickupAfterReturnException,
         FutureDateException,
         ReturnWithoutPickupException,
-        DateOutsideBookingPeriodException
+        DateOutsideBookingPeriodException,
+        InvalidDateFormatException
     ) as e:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=400,  # Using numeric value instead of status.HTTP_400_BAD_REQUEST
             detail=e.message
         )
     except CurrencyServiceUnavailableException as e:
         raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            status_code=503,  # Using numeric value instead of status.HTTP_503_SERVICE_UNAVAILABLE
             detail=e.message
         )

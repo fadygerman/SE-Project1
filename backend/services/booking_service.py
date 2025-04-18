@@ -1,6 +1,7 @@
 from datetime import date
 from decimal import Decimal
 from typing import List, Optional
+import logging
 
 from fastapi import Depends, HTTPException, status
 from sqlalchemy import and_, or_, desc, func
@@ -9,6 +10,7 @@ from sqlalchemy.orm import Session
 import exceptions.bookings as booking_exceptions
 from currency_converter.client import get_currency_converter_client_instance
 from database import get_db
+from exceptions.currencies import CurrencyServiceUnavailableException
 from models.db_models import Booking as BookingDB
 from models.db_models import BookingStatus
 from models.db_models import Car as CarDB
@@ -20,7 +22,7 @@ from models.pydantic.user import User
 from services.auth_service import get_current_user
 
 
-def get_all_bookings(db: Session) -> List[Booking]:
+def get_all_bookings(db: Session) -> list[Booking]:
     bookings_db = db.query(BookingDB).all()
     bookings = []
     
@@ -74,22 +76,36 @@ def convert_booking_currency(total_cost_in_usd: Decimal, exchange_rate: Decimal)
 
 
 def create_booking(booking: BookingCreate, user_id: int, db: Session) -> BookingDB:
+    logging.info(f"Creating booking for user_id={user_id}, car_id={booking.car_id}, " +
+                f"dates={booking.start_date} to {booking.end_date}")
      
     car = db.query(CarDB).filter(CarDB.id == booking.car_id).first()
     if not car:
+        logging.warning(f"Car with ID {booking.car_id} not found when creating booking")
         raise booking_exceptions.NoCarFoundException(booking.car_id)
     
     if not car.is_available:
+        logging.warning(f"Car with ID {booking.car_id} is not available for booking")
         raise booking_exceptions.CarNotAvailableException(booking.car_id)
     
     if does_bookings_overlap(booking.car_id, booking.start_date, booking.end_date, db):
+        logging.warning(f"Car with ID {booking.car_id} has overlapping bookings for dates " +
+                      f"{booking.start_date} to {booking.end_date}")
         raise booking_exceptions.BookingOverlapException(booking.car_id)
     
     total_cost = calculate_total_cost(car.price_per_day, booking.start_date, booking.end_date)
     
-    # Exception will be raised if the currency converter service is unavailable
-    currency_converter_client = get_currency_converter_client_instance()
-    exchange_rate = currency_converter_client.get_currency_rate('USD', booking.currency_code.value)
+    try:
+        # Exception will be raised if the currency converter service is unavailable
+        currency_converter_client = get_currency_converter_client_instance()
+        exchange_rate = currency_converter_client.get_currency_rate('USD', booking.currency_code.value)
+        logging.info(f"Got exchange rate for {booking.currency_code.value}: {exchange_rate}")
+    except ValueError as ve:
+        logging.warning(f"Invalid currency code '{booking.currency_code.value}': {ve}")
+        raise
+    except Exception as e:
+        logging.error(f"Currency service error: {e}")
+        raise
     
     new_booking = BookingDB(
         user_id=user_id,
@@ -106,16 +122,21 @@ def create_booking(booking: BookingCreate, user_id: int, db: Session) -> Booking
     db.add(new_booking)
     db.commit()
     db.refresh(new_booking)
-
+    
+    logging.info(f"Booking created with ID {new_booking.id}, total cost: {total_cost} USD")
     return new_booking
 
 def update_booking(booking_id: int, booking_update: BookingUpdate, db: Session):
+    logging.info(f"Updating booking {booking_id} with {booking_update.model_dump(exclude_unset=True)}")
+    
     # Get and validate booking
     booking = db.query(BookingDB).filter(BookingDB.id == booking_id).first()
     if booking is None:
+        logging.warning(f"Booking {booking_id} not found during update")
         raise booking_exceptions.BookingNotFoundException(booking_id)
     
     if booking.status in [BookingStatus.COMPLETED, BookingStatus.CANCELED]:
+        logging.warning(f"Cannot update booking {booking_id} in {booking.status.value} state")
         raise booking_exceptions.BookingStateException(booking.status.value)
     
     # Process date updates
@@ -126,23 +147,29 @@ def update_booking(booking_id: int, booking_update: BookingUpdate, db: Session):
     
     start_date, end_date = get_updated_booking_period(booking, update_data)
     if not is_date_ordering_valid(start_date, end_date):
+        logging.warning(f"Invalid date ordering in booking {booking_id}: {start_date} -> {end_date}")
         raise booking_exceptions.DateRangeException()
 
     if does_bookings_overlap(booking.car_id, start_date, end_date, db, booking.id):
+        logging.warning(f"Booking {booking_id} update would cause overlap for car {booking.car_id}")
         raise booking_exceptions.BookingOverlapUpdateException()
 
     price_per_day = db.query(CarDB.price_per_day).filter(CarDB.id == booking.car_id).scalar()
     update_data['total_cost'] = calculate_total_cost(price_per_day, start_date, end_date)
+    logging.info(f"Recalculated total cost for booking {booking_id}: {update_data['total_cost']} USD")
 
     pickup_date, return_date = get_updated_usage_period(booking, update_data)
     if not is_date_ordering_valid(pickup_date, return_date):
+        logging.warning(f"Invalid usage date ordering: pickup {pickup_date} after return {return_date}")
         raise booking_exceptions.PickupAfterReturnException()
 
     handle_pickup_date_validations(booking, update_data)
     handle_return_date_validations(booking, update_data)
     
     # Update booking
-    return apply_booking_updates(booking, update_data, db)
+    result = apply_booking_updates(booking, update_data, db)
+    logging.info(f"Successfully updated booking {booking_id}")
+    return result
 
 def does_bookings_overlap(car_id: int, start_date: date, end_date: date, db: Session, exclude_booking_id: int = None):
     """Check if the booking overlaps with existing bookings"""
@@ -165,8 +192,23 @@ def calculate_booking_duration(start_date: date, end_date: date):
     return (end_date - start_date).days + 1
 
 def get_car_price_in_currency(car_price: Decimal, to_currency: str) -> Decimal:
-    currency_converter_client = get_currency_converter_client_instance()
-    return currency_converter_client.convert('USD', to_currency, car_price)
+    try:
+        currency_converter_client = get_currency_converter_client_instance()
+        converted_price = currency_converter_client.convert('USD', to_currency, car_price)
+        logging.info(f"Converted price from USD to {to_currency}: {car_price} -> {converted_price}")
+        return converted_price
+    except ValueError as ve:
+        logging.warning(f"Invalid currency code '{to_currency}': {ve}")
+        # Re-raise ValueError
+        raise
+    except CurrencyServiceUnavailableException as e:
+        logging.error(f"Currency conversion failed for '{to_currency}': {e}")
+        # Re-raise the exception instead of falling back to original price
+        raise
+    except Exception as e:
+        logging.error(f"Currency conversion failed for '{to_currency}': {e}")
+        # Re-raise as CurrencyServiceUnavailableException
+        raise CurrencyServiceUnavailableException(str(e))
 
 def calculate_total_cost(car_price: Decimal, start_date: date, end_date: date): 
     """Calculate total cost based on car price and booking duration"""   
@@ -194,18 +236,23 @@ def handle_status_transitions(booking: BookingDB, update_data: dict):
     if 'status' not in update_data:
         return
         
+    old_status = booking.status
     update_data['status'] = normalize_status(update_data['status'])
     new_status = update_data['status']
+    
+    logging.info(f"Booking {booking.id} status transition: {old_status} -> {new_status}")
     
     # When transitioning to ACTIVE, set pickup_date to today if not provided
     if new_status == BookingStatus.ACTIVE and booking.status == BookingStatus.PLANNED:
         if 'pickup_date' not in update_data:
             update_data['pickup_date'] = date.today()
+            logging.info(f"Auto-setting pickup_date to today for booking {booking.id}")
     
     # When transitioning to COMPLETED, set return_date to today if not provided
     if new_status == BookingStatus.COMPLETED and booking.status == BookingStatus.ACTIVE:
         if 'return_date' not in update_data:
             update_data['return_date'] = date.today()
+            logging.info(f"Auto-setting return_date to today for booking {booking.id}")
 
 def is_date_ordering_valid(start_date: date | None, end_date: date | None):
     if start_date is None or end_date is None:
@@ -303,6 +350,9 @@ def get_filtered_bookings(
     Returns:
         PaginatedResponse containing bookings and pagination metadata
     """
+    logging.info(f"Getting filtered bookings: page={pagination.page}, page_size={pagination.page_size}, " +
+                f"user_id={user_id}, filters={filters}, sort={sort_params}")
+                
     # Start with base query
     query = db.query(BookingDB)
     
@@ -318,6 +368,7 @@ def get_filtered_bookings(
                 status = BookingStatus(filters.status)
                 query = query.filter(BookingDB.status == status)
             except ValueError:
+                logging.warning(f"Invalid status filter value: {filters.status}")
                 # If not a valid enum value, filter will return empty result
                 pass
                 
@@ -329,7 +380,7 @@ def get_filtered_bookings(
                 start_date_from = date.fromisoformat(filters.start_date_from)
                 query = query.filter(BookingDB.start_date >= start_date_from)
             except ValueError:
-                # Use domain exception instead of HTTP exception
+                logging.warning(f"Invalid date format for start_date_from: {filters.start_date_from}")
                 raise booking_exceptions.InvalidDateFormatException("start_date_from")
             
         if filters.start_date_to:
@@ -337,6 +388,7 @@ def get_filtered_bookings(
                 start_date_to = date.fromisoformat(filters.start_date_to)
                 query = query.filter(BookingDB.start_date <= start_date_to)
             except ValueError:
+                logging.warning(f"Invalid date format for start_date_to: {filters.start_date_to}")
                 raise booking_exceptions.InvalidDateFormatException("start_date_to")
             
         if filters.end_date_from:
@@ -344,6 +396,7 @@ def get_filtered_bookings(
                 end_date_from = date.fromisoformat(filters.end_date_from)
                 query = query.filter(BookingDB.end_date >= end_date_from)
             except ValueError:
+                logging.warning(f"Invalid date format for end_date_from: {filters.end_date_from}")
                 raise booking_exceptions.InvalidDateFormatException("end_date_from")
             
         if filters.end_date_to:
@@ -351,6 +404,7 @@ def get_filtered_bookings(
                 end_date_to = date.fromisoformat(filters.end_date_to)
                 query = query.filter(BookingDB.end_date <= end_date_to)
             except ValueError:
+                logging.warning(f"Invalid date format for end_date_to: {filters.end_date_to}")
                 raise booking_exceptions.InvalidDateFormatException("end_date_to")
     
     # Apply sorting if provided
@@ -364,6 +418,7 @@ def get_filtered_bookings(
                 
             query = query.order_by(sort_column)
         else:
+            logging.warning(f"Invalid sort column: {sort_params.sort_by}, fallback to id")
             # Default to sorting by ID if column doesn't exist
             query = query.order_by(BookingDB.id)
     else:
@@ -382,6 +437,7 @@ def get_filtered_bookings(
     
     # Execute query
     bookings_db = query.all()
+    logging.info(f"Found {len(bookings_db)} bookings matching criteria. Total: {total_items}")
     
     # Convert to Pydantic models
     bookings = []

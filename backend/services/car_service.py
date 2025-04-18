@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from currency_converter.client import get_currency_converter_client_instance
 from exceptions.cars import CarNotFoundException
-from exceptions.currencies import InvalidCurrencyException
+from exceptions.currencies import InvalidCurrencyException, CurrencyServiceUnavailableException
 from models.currencies import Currency
 from models.db_models import Car as CarDB
 from models.pydantic.car import Car
@@ -121,6 +121,15 @@ def get_filtered_cars(
     # Execute query
     cars_db = query.all()
     
+    # Check currency code first before processing cars
+    if currency_code != Currency.USD.value:
+        try:
+            Currency(currency_code)
+        except ValueError as ve:
+            # Raise InvalidCurrencyException instead of just logging
+            logging.warning(f"Invalid currency code '{currency_code}': {ve}")
+            raise InvalidCurrencyException(currency_code)
+    
     # Convert to Pydantic models with currency conversion if needed
     cars = []
     for car_db in cars_db:
@@ -132,12 +141,14 @@ def get_filtered_cars(
                 currency = Currency(currency_code)
                 converter = get_currency_converter_client_instance()
                 car.price_per_day = converter.convert('USD', currency.value, car.price_per_day)
-            except ValueError as ve:
-                # Log invalid currency error and use USD
-                logging.warning(f"Invalid currency code '{currency_code}': {ve}")
-            except Exception as e:
-                # Log general conversion failure and use USD price
+            except CurrencyServiceUnavailableException as e:
+                # Log but re-raise the exception
                 logging.error(f"Currency conversion failed for '{currency_code}': {e}")
+                raise
+            except Exception as e:
+                # Log and raise as CurrencyServiceUnavailableException
+                logging.error(f"Currency conversion failed for '{currency_code}': {e}")
+                raise CurrencyServiceUnavailableException(str(e))
                 
         cars.append(car)
     
