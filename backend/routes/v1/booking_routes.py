@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, status as api_status
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -54,7 +54,7 @@ async def get_bookings(
         return booking_service.get_filtered_bookings(db, pagination, filters, sort_params=sort_params)
     except InvalidDateFormatException as e:
         raise HTTPException(
-            status_code=400,  # Using numeric value instead of status.HTTP_400_BAD_REQUEST
+            status_code=api_status.HTTP_400_BAD_REQUEST, 
             detail=e.message
         )
 
@@ -94,7 +94,7 @@ async def get_my_bookings(
         )
     except InvalidDateFormatException as e:
         raise HTTPException(
-            status_code=400,  # Using numeric value instead of status.HTTP_400_BAD_REQUEST
+            status_code=api_status.HTTP_400_BAD_REQUEST,
             detail=e.message
         )
 
@@ -105,7 +105,7 @@ async def get_booking(
     """Get booking by ID. Users can only access their own bookings unless they are admins."""
     return booking
 
-@router.post("/", response_model=Booking, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=Booking, status_code=api_status.HTTP_201_CREATED)
 async def create_booking(
     booking_data: BookingCreate, 
     db: Session = Depends(get_db), 
@@ -116,7 +116,7 @@ async def create_booking(
         return booking_service.create_booking(booking_data, current_user.id, db)
     except NoCarFoundException as e:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=api_status.HTTP_404_NOT_FOUND,
             detail=e.message
         )
     except (
@@ -124,12 +124,12 @@ async def create_booking(
         BookingOverlapException,
     ) as e:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=api_status.HTTP_400_BAD_REQUEST,
             detail=e.message
         )
     except CurrencyServiceUnavailableException as e:
         raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            status_code=api_status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=e.message
         )
 
@@ -154,11 +154,11 @@ async def update_booking(
         InvalidDateFormatException
     ) as e:
         raise HTTPException(
-            status_code=400,  # Using numeric value instead of status.HTTP_400_BAD_REQUEST
+            status_code=api_status.HTTP_400_BAD_REQUEST,
             detail=e.message
         )
     except CurrencyServiceUnavailableException as e:
         raise HTTPException(
-            status_code=503,  # Using numeric value instead of status.HTTP_503_SERVICE_UNAVAILABLE
+            status_code=api_status.HTTP_503_SERVICE_UNAVAILABLE, 
             detail=e.message
         )
