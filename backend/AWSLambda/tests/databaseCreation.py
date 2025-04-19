@@ -1,14 +1,31 @@
 
 import boto3
 
-from AWSLambda.database.BookingsTable import Bookings
+from backend.AWSLambda.database.BookingsTable import BookingsTable
+
+from backend.models.pydantic.booking import BookingCreate
 
 ddb = boto3.resource('dynamodb', endpoint_url='http://localhost:8000')
 
-BookingService = Bookings(ddb)
+BookingService = BookingsTable(ddb)
 print(BookingService)
 testTable = BookingService.create_table("testTableName")
 print(testTable)
+
+new_booking = BookingCreate(user_id=1,
+car_id=999,  # Non-existent car ID
+start_date="2025-06-01",
+end_date="2025-06-05",
+planned_pickup_time="09:30:00",
+currency_code="USD")
+
+print("new_booking: {}".format(new_booking))
+
+print(BookingService.add_booking(new_booking))
+
+print("all bookings:")
+print(BookingService.get_bookings())
+
 BookingService.delete_table(ddb)
 '''
 table = testTable.create_table("testTableName")
