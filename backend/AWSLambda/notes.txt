@@ -1,0 +1,29 @@
+//MM20250417: This is my protocol, on what I did:
+I followed the descriptions in https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/getting-started-step-1.html
+doing the local installation of the dynamoDB database in Java. I will gradually read and refactor the solution in
+/backend so that we arrive at an implementation for AWS lambdas.
+
+ + First attempt at modelling the existing databases into dynamoDB tables.
+
+USAGE (also described in the above resource):
+ . download aws cli and start a local dynamodb client using command (Linux)
+java -Djava.library.path=./DynamoDBLocal_lib -jar DynamoDBLocal.jar -sharedDb
+ . execute databaseCreation.py
+
+ - design data tables:
+  . e.g., bookings: primary hash key: car_id, secondary (global) key start date. Then use a Query in order to
+    retrieve the appropriate values.
+  . e.g., cars: primary hash key: car_id
+  . standard table class? DynamoDB Standard table class vs. DynamoDB Standard IA table class
+  . consider read size and capacity unit consumption! (transactional: 1.5; strongly consistent: 1; eventually consistent: 0.5;
+    --> logging?
+   > Query more efficient (financially and temporally) than single read requests
+
+read until Programming with DynamoDB/Programming with Python
+
+
+20250420
+ + managed to find a first solution to handling NoSQL (DynamoDB) through the lambda for "create_booking" (POST /v1/bookings)
+ - route not implemented, but shouldn't be a biggie
+ - need to change database from local to AWS-hosted
+REMARK: Tried to implement using virtual environment (.venv) but wasn't able to get the imports right. will do that
