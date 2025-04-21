@@ -5,6 +5,7 @@ import { RouterProvider, createRouter } from '@tanstack/react-router'
 
 // Import the generated route tree
 import { routeTree } from './routeTree.gen'
+import AuthWrapper from './auth/AuthWrapper'
 
 // Create a new router instance
 const router = createRouter({ routeTree })
@@ -22,7 +23,9 @@ if (!rootElement.innerHTML) {
     const root = ReactDOM.createRoot(rootElement)
     root.render(
         <StrictMode>
-            <RouterProvider router={router} />
+            <AuthWrapper user={undefined} signOut={undefined} >
+                <RouterProvider router={router} />
+            </AuthWrapper>
         </StrictMode>,
     )
 }
