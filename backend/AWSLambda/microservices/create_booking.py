@@ -18,8 +18,17 @@ def handler(event, context):
         body = json.loads(event.get('body', '{}'))
         request_booking = BookingCreate(**body)
 
-        #MM20250421: ask car lambda for car details
+        #MM20250421: ask car lambda for car details using car_id (path parameters & resource)
         #             - car["price"]
+        #             - get_car_price(id)
+
+        #from boto3 import client as boto3_client
+        #lambda_client = boto3_client('lambda', region_name='eu-west-1')
+        #     response = boto3_client.invoke(
+        #         FunctionName='target-lambda-function-name',
+        #         InvocationType='RequestResponse',  # or 'Event' for async invocation
+        #         Payload=json.dumps(event)
+        #     )
         car_price = 1;
         total_cost = calculate_booking_duration(request_booking.start_date, request_booking.end_date) * car_price
 
@@ -27,6 +36,7 @@ def handler(event, context):
         #             - response["exchange_rate"]
         exchange_rate = 1;
 
+        #MM20250421: add Booking.id
         complete_booking = Booking(
             user_id=request_booking.user_id,
             car_id=request_booking.car_id,

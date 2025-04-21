@@ -6,7 +6,7 @@ import logging
 
 from boto3.dynamodb.conditions import Key, Attr
 
-from backend.models.pydantic.booking import Booking, BookingCreate
+from models.pydantic.booking import Booking
 from exceptions.bookings import BookingOverlapException
 
 # Set up our logger
@@ -32,17 +32,18 @@ class BookingsTable:
     def create_table(self, table_name):
         """
         MM20250420: research for better table configuration, in particular, KeySchema!
+        MM20250421: create a primary key for the booking id, and a GSI/LSI /(?) with car_id and start_date
         """
         try:
             self.table = self.dyn_resource.create_table(
                 TableName=table_name,
                 KeySchema=[
                     {"AttributeName": "car_id", "KeyType": "HASH"},  # sort the entries per car
-                    # {"AttributeName": "start_date", "KeyType": "RANGE"},
+                    {"AttributeName": "start_date", "KeyType": "RANGE"},
                 ],
                 AttributeDefinitions=[
                     {"AttributeName": "car_id", "AttributeType": "N"},
-                    # {"AttributeName": "start_date", "AttributeType": "S"},
+                    {"AttributeName": "start_date", "AttributeType": "S"},
                 ],
                 BillingMode='PAY_PER_REQUEST',
             )
@@ -71,8 +72,8 @@ class BookingsTable:
 
         booking_json = json.loads(booking.model_dump_json())
 
-        overlapping_bookings = self.table.query(KeyConditionExpression=Key("car_id").eq(booking_json["car_id"]),
-                                                FilterExpression=~(Attr("start_date").gt(booking_json["end_date"]) | Attr("end_date").lt(booking_json["start_date"])))
+        overlapping_bookings = self.table.query(KeyConditionExpression=Key("car_id").eq(booking_json["car_id"]) & Key("start_date").lt(booking_json["end_date"]),
+                                                FilterExpression=~(Attr("end_date").gt(booking_json["start_date"])))
 
         if len(overlapping_bookings["Items"]) > 0:
             raise BookingOverlapException(booking_json["car_id"])

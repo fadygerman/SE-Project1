@@ -27,7 +27,8 @@ def create_booking(booking: BookingCreate, db: Session):
   
   currency_converter_client = get_currency_converter_client_instance()
   exchange_rate = currency_converter_client.get_currency_rate('USD', booking.currency_code.value)
-  
+
+  #MM20250421: booking id missing?
   new_booking = BookingDB(
       user_id=booking.user_id,
       car_id=booking.car_id,

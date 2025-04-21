@@ -1,67 +1,94 @@
 
 import boto3
+import botocore
+import logging
 
-from backend.AWSLambda.database.BookingsTable import BookingsTable
-
-from backend.models.pydantic.booking import BookingCreate
+from backend.AWSLambda.database.BookingsTable import Booking, BookingsTable
+from backend.models.pydantic.booking import BookingStatus
 
 ddb = boto3.resource('dynamodb', endpoint_url='http://localhost:8000')
+
+logger = logging.getLogger()
 
 BookingService = BookingsTable(ddb)
 print(BookingService)
 testTable = BookingService.create_table("testTableName")
 print(testTable)
 
-booking1 = BookingCreate(user_id=1,
+booking1 = Booking(id=0,
+status=BookingStatus.PLANNED,
+user_id=1,
 car_id=999,
 start_date="2025-06-01",
 end_date="2025-06-05",
 planned_pickup_time="09:30:00",
-currency_code="USD")
+currency_code="USD",
+exchange_rate=1,
+total_cost=1)
 
 # new booking fails due to overlapping dates
-booking2 = BookingCreate(user_id=2,
+booking2 = Booking(id=1,
+status=BookingStatus.PLANNED,
+user_id=2,
 car_id=999,
 start_date="2025-06-02",
 end_date="2025-06-06",
 planned_pickup_time="09:30:00",
-currency_code="USD")
+currency_code="USD",
+exchange_rate=1,
+total_cost=1)
 
 # new booking succeeds due to distinct dates
-booking3 = BookingCreate(user_id=3,
+booking3 = Booking(id=2,
+status=BookingStatus.PLANNED,
+user_id=3,
 car_id=999,
 start_date="2025-06-07",
 end_date="2025-06-08",
 planned_pickup_time="09:30:00",
-currency_code="USD")
+currency_code="USD",
+exchange_rate=1,
+total_cost=1)
 
 #new booking succeeds due to distinct car_id
-booking4 = BookingCreate(user_id=4,
+booking4 = Booking(id=3,
+status=BookingStatus.PLANNED,
+user_id=4,
 car_id=1,
 start_date="2025-06-01",
 end_date="2025-06-05",
 planned_pickup_time="09:30:00",
-currency_code="USD")
+currency_code="USD",
+exchange_rate=1,
+total_cost=1)
 
 try:
     print(BookingService.add_booking(booking1))
-except:
-    print("next")
+except Exception as err:
+    logger.error(
+        print(err)
+    )
 
 try:
     print(BookingService.add_booking(booking2))
-except:
-    print("next")
+except Exception as err:
+    logger.error(
+        print(err)
+    )
+
 try:
     print(BookingService.add_booking(booking3))
-except:
-    print("next")
+except Exception as err:
+    logger.error(
+        print(err)
+    )
 
 try:
     print(BookingService.add_booking(booking4))
-except:
-    print("next")
-
+except Exception as err:
+    logger.error(
+        print(err)
+    )
 
 print("all bookings:")
 print(BookingService.get_bookings())
