@@ -31,8 +31,9 @@ class BookingsTable:
 
     def create_table(self, table_name):
         """
-        MM20250420: research for better table configuration, in particular, KeySchema!
-        MM20250421: create a primary key for the booking id, and a GSI/LSI /(?) with car_id and start_date
+        only need the separate index definitions by themselves
+         - choose primary key for fast availability check when create_booking
+         - choose secondary key 'get_booking_efficiently' for fast per booking retrieval when update_booking
         """
         try:
             self.table = self.dyn_resource.create_table(
@@ -41,9 +42,28 @@ class BookingsTable:
                     {"AttributeName": "car_id", "KeyType": "HASH"},  # sort the entries per car
                     {"AttributeName": "start_date", "KeyType": "RANGE"},
                 ],
+                GlobalSecondaryIndexes=[
+                    {
+                        'IndexName': 'get_booking_efficiently',
+                        'KeySchema': [
+                            {
+                                'AttributeName': 'id',
+                                'KeyType': 'HASH'
+                            }
+                        ],
+                        'Projection': {     # according to https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Projection.html
+                            'ProjectionType': 'KEYS_ONLY'
+                        },
+                        'ProvisionedThroughput': {
+                            'ReadCapacityUnits': 1,
+                            'WriteCapacityUnits': 1
+                        }
+                    }
+                ],
                 AttributeDefinitions=[
                     {"AttributeName": "car_id", "AttributeType": "N"},
                     {"AttributeName": "start_date", "AttributeType": "S"},
+                    {"AttributeName": "id", "AttributeType": "N"},
                 ],
                 BillingMode='PAY_PER_REQUEST',
             )
@@ -80,13 +100,16 @@ class BookingsTable:
 
         return self.table.put_item(Item=booking_json)
 
-    def get_bookings(self):
+    def get_bookings_by_id(self, booking_index: int = None):
         if self.table is None:
             logger.error("Table {} not created",
                          "testTableName")
             raise Exception("Create table '{}' first".format("testTableName"))
 
-        return self.table.scan()
+        if (booking_index is None):
+            return self.table.scan()
+        else:
+            return self.table.get_item(Key={"id": booking_index}, ConsistentRead=True)  # want to avoid failing checks
 
 
 

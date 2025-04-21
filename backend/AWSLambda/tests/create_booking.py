@@ -82,7 +82,7 @@ except Exception as err:
     logger.error(err)
 
 print("all bookings:")
-print(BookingService.get_bookings())
+print(BookingService.get_bookings_by_id())
 
 BookingService.delete_table(ddb)
 '''
