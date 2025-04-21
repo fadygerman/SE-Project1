@@ -11,7 +11,7 @@ logger = logging.getLogger()
 
 BookingService = BookingsTable(ddb)
 print(BookingService)
-testTable = BookingService.create_table("testTableName")
+testTable = BookingService.create_table()
 print(testTable)
 
 booking1 = Booking(id=0,

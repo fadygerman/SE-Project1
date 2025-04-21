@@ -25,11 +25,11 @@ class BookingsTable:
 
     def delete_table(self, dyn_resource = None):
         if self.dyn_resource is None:
-            dyn_resource = boto3.resource("dynamodb")
-        table = self.dyn_resource.Table("testTableName")
+            dyn_resource = boto3.resource('dynamodb')
+        table = self.dyn_resource.Table("bookings")
         table.delete()
 
-    def create_table(self, table_name):
+    def create_table(self):
         """
         only need the separate index definitions by themselves
          - choose primary key for fast availability check when create_booking
@@ -37,7 +37,7 @@ class BookingsTable:
         """
         try:
             self.table = self.dyn_resource.create_table(
-                TableName=table_name,
+                TableName="bookings",
                 KeySchema=[
                     {"AttributeName": "car_id", "KeyType": "HASH"},  # sort the entries per car
                     {"AttributeName": "start_date", "KeyType": "RANGE"},
