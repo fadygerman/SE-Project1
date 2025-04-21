@@ -1,6 +1,5 @@
 
 import boto3
-import botocore
 import logging
 
 from backend.AWSLambda.database.BookingsTable import Booking, BookingsTable
@@ -65,30 +64,22 @@ total_cost=1)
 try:
     print(BookingService.add_booking(booking1))
 except Exception as err:
-    logger.error(
-        print(err)
-    )
+    logger.error(err)
 
 try:
     print(BookingService.add_booking(booking2))
 except Exception as err:
-    logger.error(
-        print(err)
-    )
+    logger.error(err)
 
 try:
     print(BookingService.add_booking(booking3))
 except Exception as err:
-    logger.error(
-        print(err)
-    )
+    logger.error(err)
 
 try:
     print(BookingService.add_booking(booking4))
 except Exception as err:
-    logger.error(
-        print(err)
-    )
+    logger.error(err)
 
 print("all bookings:")
 print(BookingService.get_bookings())

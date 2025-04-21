@@ -36,8 +36,9 @@ def handler(event, context):
         #             - response["exchange_rate"]
         exchange_rate = 1;
 
-        #MM20250421: add Booking.id
+        #MM20250421: IMHO, the booking.id should be generated at exactly this point.
         complete_booking = Booking(
+            id=request_booking.id,
             user_id=request_booking.user_id,
             car_id=request_booking.car_id,
             start_date=request_booking.start_date,
