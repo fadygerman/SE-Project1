@@ -30,3 +30,14 @@ REMARK: Tried to implement using virtual environment (.venv) but wasn't able to 
 
 20250420
  + combined route and backend
+
+20250421
+ + use a global secondary index for get_booking according to
+ https://stackoverflow.com/questions/72133092/create-global-secondary-index-gsi-for-dynamodb-using-boto3-in-python
+ -> AWSLambda.database.BookingsTable.BookingsTable, AWSLambda.database.BookingsTable.BookingsTable.get_bookings_by_id
+ + introduced api gateway lambda proxy integration
+ https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html#api-gateway-simple-proxy-for-lambda-output-format
+ + implemented AWSLambda.microservices.get_booking()/AWSLambda.microservices.get_bookings()
+ + implemented AWSLambda.microservices.update_booking()
+
+ - AUTHENTICATION!

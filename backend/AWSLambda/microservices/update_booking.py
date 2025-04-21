@@ -6,65 +6,59 @@
 import boto3
 import json
 
-from backend.AWSLambda.database.BookingsTable import Booking
-
+from AWSLambda.database import BookingsTable
 from backend.exceptions.bookings import *
 from fastapi import status, HTTPException
 
-from models.pydantic.booking import BookingUpdate, BookingCreate
+from models.pydantic.booking import Booking, BookingUpdate, BookingCreate
 
 
 # MM20250421: rely on API gateway for correct path and HTTP method
 # MM20250421: think about authentication!
 def handler(event, context):
     try:
-    # from boto3 import client as boto3_client
-    # lambda_client = boto3_client('lambda', region_name='eu-west-1')
-    #     response = boto3_client.invoke(
-    #         FunctionName='target-lambda-function-name',
-    #         InvocationType='RequestResponse',  # or 'Event' for async invocation
-    #         Payload=json.dumps(event)
-    #     )
+        # from boto3 import client as boto3_client
+        # lambda_client = boto3_client('lambda', region_name='eu-west-1')
+        #     response = boto3_client.invoke(
+        #         FunctionName='target-lambda-function-name',
+        #         InvocationType='RequestResponse',  # or 'Event' for async invocation
+        #         Payload=json.dumps(event)
+        #     )
 
-    if ('id' not in event['queryStringParameters']):
-        raise HTTPException("Missing required parameter 'id'", status.HTTP_400_BAD_REQUEST)
+        if ('id' not in event['queryStringParameters']):
+            raise HTTPException("Missing required parameter 'id'", status.HTTP_400_BAD_REQUEST)
 
+        body = json.loads(event.get('body', '{}'))
 
-    body = json.loads(event.get('body', '{}'))
-    # old_booking = get_bookings(body.id)
-    old_booking = Booking()
-    update = BookingUpdate(**body)
+        old_booking = BookingsTable.get_bookings_by_id(body['id'])
+        if old_booking == None:
+            raise BookingNotFoundException(body['id'])
 
-    new_booking = Booking(
-        id=old_booking.id,
-        user_id=old_booking.user_id,
-        car_id=old_booking.car_id,
-        start_date=update.start_date,
-        end_date=update.end_date,
-        status=update.status,
-        planned_pickup_time=old_booking.planned_pickup_time,
-        pickup_date=update.planned_pickup_date,
-        return_date=update.return_date,
-        total_cost=old_booking.total_cost,
-        currency_code=old_booking.currency_code,
-        exchange_rate=old_booking.exchange_rate,
-        status=old_booking.status
+        update = BookingUpdate(**body)
 
-        user=old_booking.user,
-        car=old_booking.car,
-    )
+        new_booking = Booking(
+            id=old_booking.id,
+            user_id=old_booking.user_id,
+            car_id=old_booking.car_id,
+            start_date=update.start_date,
+            end_date=update.end_date,
+            status=update.status,
+            planned_pickup_time=old_booking.planned_pickup_time,
+            pickup_date=update.planned_pickup_date,
+            return_date=update.return_date,
+            total_cost=old_booking.total_cost,
+            currency_code=old_booking.currency_code,
+            exchange_rate=old_booking.exchange_rate,
 
-
-
-    except NoCarFoundException as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=e.message
+            user=old_booking.user,
+            car=old_booking.car,
         )
+
+        return BookingsTable.put_booking(new_booking)
+
     except (
-            CarNotAvailableException,
-            BookingOverlapException,
-            BookingStartDateException
+            BookingNotFoundException,
+            Exception
     ) as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

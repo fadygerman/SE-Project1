@@ -7,7 +7,7 @@ import logging
 from boto3.dynamodb.conditions import Key, Attr
 
 from models.pydantic.booking import Booking
-from exceptions.bookings import BookingOverlapException
+from exceptions.bookings import BookingOverlapException, BookingNotFoundException
 
 # Set up our logger
 logging.basicConfig(level=logging.INFO)
@@ -110,6 +110,22 @@ class BookingsTable:
             return self.table.scan()
         else:
             return self.table.get_item(Key={"id": booking_index}, ConsistentRead=True)  # want to avoid failing checks
+
+    def put_booking(self, booking: Booking):
+        if self.table is None:
+            logger.error("Table {} not created",
+                         "testTableName")
+            raise Exception("Create table '{}' first".format("testTableName"))
+
+        booking_json = json.loads(booking.model_dump_json())
+
+        value = self.table.get_item(Key={"id": booking_json["id"]}, ConsistentRead=True)
+
+        if len(value["Item"]) > 0:
+            return self.table.put_item(Item=booking_json)
+        else:
+            raise BookingNotFoundException(booking_json["id"])
+
 
 
 
