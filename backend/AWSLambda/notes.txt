@@ -25,5 +25,8 @@ read until Programming with DynamoDB/Programming with Python
 20250420
  + managed to find a first solution to handling NoSQL (DynamoDB) through the lambda for "create_booking" (POST /v1/bookings)
  - route not implemented, but shouldn't be a biggie
- - need to change database from local to AWS-hosted
+ - need to change database from local to AWS-hosted (one of the last steps)
 REMARK: Tried to implement using virtual environment (.venv) but wasn't able to get the imports right. will do that
+
+20250420
+ + combined route and backend

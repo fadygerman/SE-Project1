@@ -3,22 +3,33 @@
 import boto3
 import json
 
+from models.pydantic.booking import BookingCreate
+from backend.AWSLambda.database.BookingsTable import BookingsTable
+
+from backend.exceptions.bookings import *
+from fastapi import status, HTTPException
+
 def handler(event, context):
     try:
         # Parse request body
         body = json.loads(event.get('body', '{}'))
 
-        if not all(k in body for k in ['car_id', 'start_date', 'end_date']):
-            return {
-                'statusCode': 400,
-                'headers': {'Content-Type': 'application/json'},
-                'body': json.dumps({'error': 'car_id and start_date are required fields'})
-            }
-    except Exception as e:
-        print(f"Error creating car: {str(e)}")
-        return {
-            'statusCode': 500,
-            'headers': {'Content-Type': 'application/json'},
-            'body': json.dumps({'error': 'Could not create car'})
-        }
+        booking = BookingCreate(**body)
 
+        # ask get_car(id) lambda for availability
+
+        return BookingsTable.add_booking(booking)
+    except NoCarFoundException as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=e.message
+        )
+    except (
+        CarNotAvailableException,
+        BookingOverlapException,
+        BookingStartDateException
+    ) as e:
+        raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail=e.message
+    )

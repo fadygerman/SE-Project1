@@ -7,6 +7,7 @@ import logging
 from boto3.dynamodb.conditions import Key, Attr
 
 from backend.models.pydantic.booking import BookingCreate
+from exceptions.bookings import BookingOverlapException
 
 # Set up our logger
 logging.basicConfig(level=logging.INFO)
@@ -56,6 +57,12 @@ class BookingsTable:
         else:
             return self.table
 
+    def get_table(self):
+        if not self.table is None:
+            return self.table
+        else:
+            return self.table.create_table("testTableName")
+
     def add_booking(self, booking: BookingCreate):
         if self.table is None:
             logger.error("Table {} not created",
@@ -68,7 +75,7 @@ class BookingsTable:
                                                 FilterExpression=~(Attr("start_date").gt(booking_json["end_date"]) | Attr("end_date").lt(booking_json["start_date"])))
 
         if len(overlapping_bookings["Items"]) > 0:
-            raise Exception("Overlapping bookings between {} and {} already exist".format(booking_json["start_date"], booking_json["end_date"]))
+            raise BookingOverlapException(booking_json["car_id"])
 
         return self.table.put_item(Item=booking_json)
 
@@ -78,7 +85,7 @@ class BookingsTable:
                          "testTableName")
             raise Exception("Create table '{}' first".format("testTableName"))
 
-        return self.table.query(KeyConditionExpression=Key("car_id").eq(999))
+        return self.table.scan()
 
 
 
