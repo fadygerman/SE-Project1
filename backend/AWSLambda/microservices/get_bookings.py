@@ -11,7 +11,7 @@ from backend.AWSLambda.database.BookingsTable import BookingsTable
 from backend.exceptions.bookings import *
 from fastapi import status, HTTPException
 
-# MM20250421: rely on API gateway for correct path
+# MM20250421: rely on API gateway for correct path and HTTP method
 # MM20250421: think about authentication!
 def handler(event, context):
     try:
