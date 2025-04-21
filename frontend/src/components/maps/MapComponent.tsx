@@ -15,14 +15,16 @@ const containerStyle = {
   borderRadius: '10px',
 };
 
-const center = { // change to props --> maybe also add car information
-  lat: 48.2082,
-  lng: 16.3738,
-};
+interface MapComponentProps {
+  center: {
+    lat: number;
+    lng: number;
+  };
+}
 
+// HOW TO USE: <MapComponent center={{ lat: 48.2082, lng: 16.3738 }}></MapComponent> // optionally MapComponentProps can be enhanced
 
-
-const MapComponent = () => {
+const MapComponent: React.FC<MapComponentProps> = ({ center }) => {
   const onLoad = useCallback((map: google.maps.Map) => {
     const destinationUrl = `https://www.google.com/maps/dir/?api=1&destination=${center.lat},${center.lng}`;
 
