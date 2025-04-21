@@ -6,7 +6,7 @@ import logging
 
 from boto3.dynamodb.conditions import Key, Attr
 
-from backend.models.pydantic.booking import BookingCreate
+from backend.models.pydantic.booking import Booking, BookingCreate
 from exceptions.bookings import BookingOverlapException
 
 # Set up our logger
@@ -63,7 +63,7 @@ class BookingsTable:
         else:
             return self.table.create_table("testTableName")
 
-    def add_booking(self, booking: BookingCreate):
+    def add_booking(self, booking: Booking):
         if self.table is None:
             logger.error("Table {} not created",
                          "testTableName")
