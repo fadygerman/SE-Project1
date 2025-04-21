@@ -1,15 +1,14 @@
-'''
-Pydantic models, provided by the Pydantic library 
-(a data validation and settings management library in Python), 
-are used to validate incoming data, serialize outgoing data, 
-and define the structure of the data used in the application.
-'''
-
-from datetime import date
+from datetime import date, time, timedelta
 from decimal import Decimal
 from enum import Enum
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 from typing import Optional
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from models.currencies import Currency
+from models.pydantic.car import Car
+from models.pydantic.user import User
+
 
 class BookingStatus(str, Enum):
     PLANNED = "PLANNED"
@@ -17,43 +16,6 @@ class BookingStatus(str, Enum):
     COMPLETED = "COMPLETED"
     CANCELED = "CANCELED"
     OVERDUE = "OVERDUE"
-
-# Response models (output)    
-class User(BaseModel):
-    id: int
-    first_name: str = Field(description="User's first name", min_length=1, max_length=50)
-    last_name: str = Field(description="User's last name", min_length=1, max_length=50) 
-    email: EmailStr = Field(description="User's email address")
-    phone_number: str = Field(description="User's phone number")
-    password_hash: Optional[str] = Field(None, description="Hashed password (internal use only)", exclude=True)
-    
-    model_config = ConfigDict(from_attributes=True)
-    
-    @field_validator('phone_number')
-    @classmethod
-    def validate_phone(cls, v):
-        # Basic phone validation - can be enhanced based on your specific requirements
-        if not v or len(v) < 8:
-            raise ValueError('Phone number must be at least 8 characters')
-        return v
-
-class Car(BaseModel):
-    id: int
-    name: str = Field(description="Car name/brand")
-    model: str = Field(description="Car model")
-    price_per_day: Decimal = Field(description="Daily rental price", gt=0)
-    is_available: bool = Field(description="Whether the car is available for booking")
-    latitude: Optional[float] = Field(None, description="Car's current latitude location")
-    longitude: Optional[float] = Field(None, description="Car's current longitude location")
-    
-    model_config = ConfigDict(from_attributes=True)
-    
-    @field_validator('price_per_day')
-    @classmethod
-    def validate_price(cls, v):
-        if v <= 0:
-            raise ValueError('Price must be greater than zero')
-        return v
     
 class Booking(BaseModel):
     id: int
@@ -61,9 +23,12 @@ class Booking(BaseModel):
     car_id: int = Field(description="ID of the car being booked")
     start_date: date = Field(description="Start date of the booking period")
     end_date: date = Field(description="End date of the booking period")
+    planned_pickup_time: time = Field(description="Time when the car will be picked up on start_date (UTC time)")
     pickup_date: Optional[date] = Field(None, description="Actual date when car was picked up")
     return_date: Optional[date] = Field(None, description="Actual date when car was returned")
     total_cost: Decimal = Field(description="Total cost of the booking", gt=0)
+    currency_code: Currency = Field(description="Currency code of the booking")
+    exchange_rate: Decimal = Field(description="Exchange rate of the booking")
     status: BookingStatus = Field(description="Current status of the booking")
     
     # Optional nested objects for full data retrieval
@@ -90,14 +55,31 @@ class Booking(BaseModel):
     
 # Request models (input)
 class BookingCreate(BaseModel):
-    user_id: int = Field(description="ID of the user making the booking")
     car_id: int = Field(description="ID of the car being booked")
     start_date: date = Field(description="Start date of the booking period")
     end_date: date = Field(description="End date of the booking period")
+    planned_pickup_time: time = Field(description="Time when the car will be picked up on start_date (UTC time)")
+    currency_code: Currency = Field(description="Currency code of the booking")
+    
+    @field_validator('start_date')
+    @classmethod
+    def validate_start_date(cls, start_date):
+        if start_date is None:
+            raise ValueError('Start date is required')
+        
+        # Ensure start_date is at least tomorrow (today + 1 day)
+        tomorrow = date.today() + timedelta(days=1)
+        if start_date < tomorrow:
+            raise ValueError('Start date must be tomorrow or later')
+        
+        return start_date
     
     @field_validator('end_date')
     @classmethod
-    def validate_dates(cls, end_date, info):
+    def validate_end_date(cls, end_date, info):
+        if end_date is None:
+            raise ValueError('End date is required')
+            
         start_date = info.data.get('start_date')
         if start_date and end_date < start_date:
             raise ValueError('End date must be after start date')
@@ -141,25 +123,3 @@ class BookingUpdate(BaseModel):
         if return_date < pickup_date:
             raise ValueError('Return date must be after pickup date')
         return return_date
-    
-class UserRegister(BaseModel):
-    first_name: str = Field(description="User's first name", min_length=1, max_length=50)
-    last_name: str = Field(description="User's last name", min_length=1, max_length=50)
-    email: EmailStr = Field(description="User's email address")
-    phone_number: str = Field(description="User's phone number")
-    password: str = Field(description="User's password", min_length=8)
-    
-    @field_validator('phone_number')
-    @classmethod
-    def validate_phone(cls, v):
-        if not v or len(v) < 8:
-            raise ValueError('Phone number must be at least 8 characters')
-        return v
-    
-    @field_validator('password')
-    @classmethod
-    def validate_password(cls, v):
-        if len(v) < 8:
-            raise ValueError('Password must be at least 8 characters')
-        # Add more password validation as needed (special chars, numbers, etc.)
-        return v

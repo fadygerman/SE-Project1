@@ -36,7 +36,7 @@ public class CurrencyConverterService {
                 .stream()
                 .filter(rate -> rate.getCurrency().equals(toCurrency))
                 .findFirst()
-                .orElseThrow(() -> new CurrencyNotFound(fromCurrency))
+                .orElseThrow(() -> new CurrencyNotFound(toCurrency))
                 .getRate();
 
         return (long)((amount / fromRate) * toRate);

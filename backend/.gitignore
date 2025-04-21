@@ -176,6 +176,7 @@ cython_debug/
 .idea/
 .vscode/
 *.old
+*.ini
 
 # Database
 *.db

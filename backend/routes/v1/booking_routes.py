@@ -1,46 +1,62 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
 from typing import List
 
-from database import get_db
-from models.db_models import Booking as BookingDB
-from models.models import Booking, BookingCreate, BookingUpdate
+from fastapi import APIRouter, Body, Depends, HTTPException, status
+from sqlalchemy.orm import Session
 
-from services import booking_service
+from database import get_db
 from exceptions.bookings import *
+from exceptions.currencies import CurrencyServiceUnavailableException
+from models.db_models import Booking as BookingDB
+from models.db_models import User, UserRole
+from models.pydantic.booking import Booking, BookingCreate, BookingUpdate
+from services import booking_service
+from services.auth_service import get_current_user, require_role
+from services.booking_service import get_booking_with_permission_check
 
 router = APIRouter(
     prefix="/bookings",
     tags=["bookings"]
 )
 
-# Get all bookings endpoint
+# Get all bookings endpoint - admin only
 @router.get("/", response_model=List[Booking])
-async def get_bookings(db: Session = Depends(get_db)):
-    bookings = db.query(BookingDB).all()
+async def get_bookings(
+    db: Session = Depends(get_db), 
+    _=Depends(require_role([UserRole.ADMIN]))
+):
+    return booking_service.get_all_bookings(db)
+
+# Get user's own bookings
+@router.get("/my", response_model=List[Booking])
+async def get_my_bookings(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get all bookings for the currently authenticated user"""
+    bookings = db.query(BookingDB).filter(BookingDB.user_id == current_user.id).all()
     return bookings
 
-# Get booking by ID endpoint
 @router.get("/{booking_id}", response_model=Booking)
-async def get_booking(booking_id: int, db: Session = Depends(get_db)):
-    booking = db.query(BookingDB).filter(BookingDB.id == booking_id).first()
-    if booking is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Booking with ID {booking_id} not found"
-        )
+async def get_booking(
+    booking: BookingDB = Depends(get_booking_with_permission_check)
+):
+    """Get booking by ID. Users can only access their own bookings unless they are admins."""
     return booking
 
 @router.post("/", response_model=Booking, status_code=status.HTTP_201_CREATED)
-async def create_booking(booking: BookingCreate, db: Session = Depends(get_db)):
+async def create_booking(
+    booking_data: BookingCreate, 
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
+):
+    
     try:
-        return booking_service.create_booking(booking, db)
+        return booking_service.create_booking(booking_data, current_user.id, db)
     except NoCarFoundException as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=e.message
         )
-    
     except (
         CarNotAvailableException,
         BookingOverlapException,
@@ -48,17 +64,23 @@ async def create_booking(booking: BookingCreate, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=e.message
-        )    
-
-@router.put("/{booking_id}", response_model=Booking)
-async def update_booking(booking_id: int, booking_update: BookingUpdate, db: Session = Depends(get_db)):
-    try:
-        return booking_service.update_booking(booking_id, booking_update, db)
-    except BookingNotFoundException as e:
+        )
+    except CurrencyServiceUnavailableException as e:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=e.message
         )
+
+@router.put("/{booking_id}", response_model=Booking)
+async def update_booking(
+    booking: BookingDB = Depends(get_booking_with_permission_check),
+    booking_update: BookingUpdate = Body(...),
+    db: Session = Depends(get_db)
+):
+    """Update a booking. Users can only update their own bookings unless they are admins."""
+    try:
+        # Pass the booking ID from the retrieved booking object
+        return booking_service.update_booking(booking.id, booking_update, db)
     except (
         BookingStateException,
         DateRangeException, 
@@ -70,5 +92,10 @@ async def update_booking(booking_id: int, booking_update: BookingUpdate, db: Ses
     ) as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
+            detail=e.message
+        )
+    except CurrencyServiceUnavailableException as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=e.message
         )
