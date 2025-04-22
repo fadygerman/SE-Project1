@@ -17,6 +17,7 @@ import { Button } from "./ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { useTheme } from "@/hooks/use-dark-mode";
 import Profile from "@/auth/Profile";
+import {useAuth} from "@/auth/AuthWrapper.tsx";
 
 interface ItemsProps {
     title: string,
@@ -40,7 +41,8 @@ const items: ItemsProps[] = [
 
 export function AppSidebar() {
     const { setTheme } = useTheme()
-
+    const user = useAuth();
+    console.log(user.user)
     return (
         <Sidebar>
             <SidebarHeader>

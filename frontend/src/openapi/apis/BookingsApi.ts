@@ -66,6 +66,14 @@ export class BookingsApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
         const response = await this.request({
             path: `/api/v1/bookings/`,
             method: 'POST',
@@ -86,6 +94,7 @@ export class BookingsApi extends runtime.BaseAPI {
     }
 
     /**
+     * Get booking by ID. Users can only access their own bookings unless they are admins.
      * Get Booking
      */
     async getBookingApiV1BookingsBookingIdGetRaw(requestParameters: GetBookingApiV1BookingsBookingIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Booking>> {
@@ -100,6 +109,14 @@ export class BookingsApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
         const response = await this.request({
             path: `/api/v1/bookings/{booking_id}`.replace(`{${"booking_id"}}`, encodeURIComponent(String(requestParameters['bookingId']))),
             method: 'GET',
@@ -111,6 +128,7 @@ export class BookingsApi extends runtime.BaseAPI {
     }
 
     /**
+     * Get booking by ID. Users can only access their own bookings unless they are admins.
      * Get Booking
      */
     async getBookingApiV1BookingsBookingIdGet(requestParameters: GetBookingApiV1BookingsBookingIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Booking> {
@@ -126,6 +144,14 @@ export class BookingsApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
         const response = await this.request({
             path: `/api/v1/bookings/`,
             method: 'GET',
@@ -145,6 +171,43 @@ export class BookingsApi extends runtime.BaseAPI {
     }
 
     /**
+     * Get all bookings for the currently authenticated user
+     * Get My Bookings
+     */
+    async getMyBookingsApiV1BookingsMyGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Booking>>> {
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/api/v1/bookings/my`,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(BookingFromJSON));
+    }
+
+    /**
+     * Get all bookings for the currently authenticated user
+     * Get My Bookings
+     */
+    async getMyBookingsApiV1BookingsMyGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Booking>> {
+        const response = await this.getMyBookingsApiV1BookingsMyGetRaw(initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Update a booking. Users can only update their own bookings unless they are admins.
      * Update Booking
      */
     async updateBookingApiV1BookingsBookingIdPutRaw(requestParameters: UpdateBookingApiV1BookingsBookingIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Booking>> {
@@ -168,6 +231,14 @@ export class BookingsApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
         const response = await this.request({
             path: `/api/v1/bookings/{booking_id}`.replace(`{${"booking_id"}}`, encodeURIComponent(String(requestParameters['bookingId']))),
             method: 'PUT',
@@ -180,6 +251,7 @@ export class BookingsApi extends runtime.BaseAPI {
     }
 
     /**
+     * Update a booking. Users can only update their own bookings unless they are admins.
      * Update Booking
      */
     async updateBookingApiV1BookingsBookingIdPut(requestParameters: UpdateBookingApiV1BookingsBookingIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Booking> {

@@ -27,6 +27,13 @@ import {
     CarToJSON,
     CarToJSONTyped,
 } from './Car';
+import type { Currency } from './Currency';
+import {
+    CurrencyFromJSON,
+    CurrencyFromJSONTyped,
+    CurrencyToJSON,
+    CurrencyToJSONTyped,
+} from './Currency';
 import type { BookingStatus } from './BookingStatus';
 import {
     BookingStatusFromJSON,
@@ -72,6 +79,12 @@ export interface Booking {
      */
     endDate: Date;
     /**
+     * Time when the car will be picked up on start_date (UTC time)
+     * @type {string}
+     * @memberof Booking
+     */
+    plannedPickupTime: string;
+    /**
      * 
      * @type {Date}
      * @memberof Booking
@@ -89,6 +102,18 @@ export interface Booking {
      * @memberof Booking
      */
     totalCost: string;
+    /**
+     * Currency code of the booking
+     * @type {Currency}
+     * @memberof Booking
+     */
+    currencyCode: Currency;
+    /**
+     * Exchange rate of the booking
+     * @type {string}
+     * @memberof Booking
+     */
+    exchangeRate: string;
     /**
      * Current status of the booking
      * @type {BookingStatus}
@@ -120,7 +145,10 @@ export function instanceOfBooking(value: object): value is Booking {
     if (!('carId' in value) || value['carId'] === undefined) return false;
     if (!('startDate' in value) || value['startDate'] === undefined) return false;
     if (!('endDate' in value) || value['endDate'] === undefined) return false;
+    if (!('plannedPickupTime' in value) || value['plannedPickupTime'] === undefined) return false;
     if (!('totalCost' in value) || value['totalCost'] === undefined) return false;
+    if (!('currencyCode' in value) || value['currencyCode'] === undefined) return false;
+    if (!('exchangeRate' in value) || value['exchangeRate'] === undefined) return false;
     if (!('status' in value) || value['status'] === undefined) return false;
     return true;
 }
@@ -140,9 +168,12 @@ export function BookingFromJSONTyped(json: any, ignoreDiscriminator: boolean): B
         'carId': json['car_id'],
         'startDate': (new Date(json['start_date'])),
         'endDate': (new Date(json['end_date'])),
+        'plannedPickupTime': json['planned_pickup_time'],
         'pickupDate': json['pickup_date'] == null ? undefined : (new Date(json['pickup_date'])),
         'returnDate': json['return_date'] == null ? undefined : (new Date(json['return_date'])),
         'totalCost': json['total_cost'],
+        'currencyCode': CurrencyFromJSON(json['currency_code']),
+        'exchangeRate': json['exchange_rate'],
         'status': BookingStatusFromJSON(json['status']),
         'user': json['user'] == null ? undefined : UserFromJSON(json['user']),
         'car': json['car'] == null ? undefined : CarFromJSON(json['car']),
@@ -165,9 +196,12 @@ export function BookingToJSONTyped(value?: Booking | null, ignoreDiscriminator: 
         'car_id': value['carId'],
         'start_date': ((value['startDate']).toISOString().substring(0,10)),
         'end_date': ((value['endDate']).toISOString().substring(0,10)),
+        'planned_pickup_time': value['plannedPickupTime'],
         'pickup_date': value['pickupDate'] == null ? undefined : ((value['pickupDate'] as any).toISOString().substring(0,10)),
         'return_date': value['returnDate'] == null ? undefined : ((value['returnDate'] as any).toISOString().substring(0,10)),
         'total_cost': value['totalCost'],
+        'currency_code': CurrencyToJSON(value['currencyCode']),
+        'exchange_rate': value['exchangeRate'],
         'status': BookingStatusToJSON(value['status']),
         'user': UserToJSON(value['user']),
         'car': CarToJSON(value['car']),

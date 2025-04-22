@@ -5,8 +5,11 @@ They are used to interact with the database and perform CRUD operations.
 '''
 
 import enum
-from sqlalchemy import Boolean, Column, Date, Enum, Float, ForeignKey, Integer, String, Numeric
-from sqlalchemy.orm import relationship, declarative_base
+
+from sqlalchemy import Boolean, Column, Date, Enum, Float, ForeignKey, Integer, Numeric, String, Time
+from sqlalchemy.orm import declarative_base, relationship
+
+from models.currencies import Currency
 
 Base = declarative_base()
 
@@ -17,6 +20,10 @@ class BookingStatus(enum.Enum):
     CANCELED = "CANCELED"
     OVERDUE = "OVERDUE"
 
+class UserRole(enum.Enum):
+    USER = "USER"
+    ADMIN = "ADMIN"
+
 class User(Base):
     __tablename__ = "users"
     
@@ -25,8 +32,8 @@ class User(Base):
     last_name = Column(String(50))
     email = Column(String(150), unique=True, index=True)
     phone_number = Column(String(20), unique=True)
-    password_hash = Column(String(255))
-    cognito_id = Column(String(255), unique=True, nullable=True)
+    cognito_id = Column(String(255), unique=True, nullable=False)
+    role = Column(Enum(UserRole), default=UserRole.USER, nullable=False)
     
     # Relationship to bookings
     bookings = relationship("Booking", back_populates="user")
@@ -61,7 +68,11 @@ class Booking(Base):
     end_date = Column(Date)
     pickup_date = Column(Date, nullable=True)
     return_date = Column(Date, nullable=True)
-    total_cost = Column(Numeric(10, 2))
+    # Store time without timezone (assumed to be in UTC)
+    planned_pickup_time = Column(Time(timezone=False), nullable=False)
+    total_cost = Column(Numeric(10, 2)) # total cost in USD
+    currency_code = Column(Enum(Currency), nullable=False)
+    exchange_rate = Column(Numeric(10, 2), nullable=False)
     status = Column(Enum(BookingStatus))
     
     # Relationships

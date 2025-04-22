@@ -1,16 +1,14 @@
-import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbPage, BreadcrumbLink, BreadcrumbSeparator } from '@/components/ui/breadcrumb'
+import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import { Card, CardHeader, CardContent, CardTitle, CardFooter, CardDescription } from '@/components/ui/card'
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { format } from 'date-fns'
-import { CalendarIcon, Car, IdCardIcon } from 'lucide-react'
+import { CalendarIcon } from 'lucide-react'
 import { useState } from 'react'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {useCarIdQuery} from "@/api/cars";
 import {useCreateBookingMutation} from "@/api/bookings";
@@ -32,19 +30,20 @@ function RouteComponent() {
       return
     }
     setIsBooking(true)
-    // Simulate booking process
     setTimeout(() => {
       alert(`Car booked from ${dateRange.from ? format(dateRange.from, "PPP") : "N/A"} to ${dateRange.to ? format(dateRange.to, "PPP") : "N/A"}`)
       setIsBooking(false)
     }, 2000)
     addBooking.mutate({
-        userId: 1,
-        carId: carId,
-        startDate: dateRange.from,
-        endDate: dateRange.to,
+        carId: Number(carId),
+        startDate: new Date("2025-10-07"),
+        endDate: new Date("2025-10-10"),
+        plannedPickupTime: "23:12",
+        currencyCode:"USD",
         })
   }
-  const carDetail = useCarIdQuery(carId);
+  console.log(carId)
+  const carDetail = useCarIdQuery(Number(carId));
   const addBooking = useCreateBookingMutation();
   return (
     <div className="container mx-auto p-4">

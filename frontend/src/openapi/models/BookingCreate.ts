@@ -13,18 +13,20 @@
  */
 
 import { mapValues } from '../runtime';
+import type { Currency } from './Currency';
+import {
+    CurrencyFromJSON,
+    CurrencyFromJSONTyped,
+    CurrencyToJSON,
+    CurrencyToJSONTyped,
+} from './Currency';
+
 /**
  * 
  * @export
  * @interface BookingCreate
  */
 export interface BookingCreate {
-    /**
-     * ID of the user making the booking
-     * @type {number}
-     * @memberof BookingCreate
-     */
-    userId: number;
     /**
      * ID of the car being booked
      * @type {number}
@@ -43,16 +45,31 @@ export interface BookingCreate {
      * @memberof BookingCreate
      */
     endDate: Date;
+    /**
+     * Time when the car will be picked up on start_date (UTC time)
+     * @type {string}
+     * @memberof BookingCreate
+     */
+    plannedPickupTime: string;
+    /**
+     * Currency code of the booking
+     * @type {Currency}
+     * @memberof BookingCreate
+     */
+    currencyCode: Currency;
 }
+
+
 
 /**
  * Check if a given object implements the BookingCreate interface.
  */
 export function instanceOfBookingCreate(value: object): value is BookingCreate {
-    if (!('userId' in value) || value['userId'] === undefined) return false;
     if (!('carId' in value) || value['carId'] === undefined) return false;
     if (!('startDate' in value) || value['startDate'] === undefined) return false;
     if (!('endDate' in value) || value['endDate'] === undefined) return false;
+    if (!('plannedPickupTime' in value) || value['plannedPickupTime'] === undefined) return false;
+    if (!('currencyCode' in value) || value['currencyCode'] === undefined) return false;
     return true;
 }
 
@@ -66,10 +83,11 @@ export function BookingCreateFromJSONTyped(json: any, ignoreDiscriminator: boole
     }
     return {
         
-        'userId': json['user_id'],
         'carId': json['car_id'],
         'startDate': (new Date(json['start_date'])),
         'endDate': (new Date(json['end_date'])),
+        'plannedPickupTime': json['planned_pickup_time'],
+        'currencyCode': CurrencyFromJSON(json['currency_code']),
     };
 }
 
@@ -84,10 +102,11 @@ export function BookingCreateToJSONTyped(value?: BookingCreate | null, ignoreDis
 
     return {
         
-        'user_id': value['userId'],
         'car_id': value['carId'],
         'start_date': ((value['startDate']).toISOString().substring(0,10)),
         'end_date': ((value['endDate']).toISOString().substring(0,10)),
+        'planned_pickup_time': value['plannedPickupTime'],
+        'currency_code': CurrencyToJSON(value['currencyCode']),
     };
 }
 

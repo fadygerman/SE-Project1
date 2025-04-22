@@ -1,31 +1,79 @@
 import os
+from decimal import Decimal
 
-import zeep
 import requests
-import dotenv
+import zeep
+
+from exceptions.currencies import CurrencyServiceUnavailableException
+
+_currency_converter_client_instance = None
+
+# Factory function that creates and returns a client instance
+def get_currency_converter_client_instance():
+    global _currency_converter_client_instance
+    if _currency_converter_client_instance is None:
+        try:
+            _currency_converter_client_instance = CurrencyConverterClient()
+        except Exception as e:
+            raise CurrencyServiceUnavailableException(str(e))
+    return _currency_converter_client_instance
+
+class CurrencyConverterClient:
+    def __init__(self):
+        self.jwt_token = get_jwt_token()
+        self.client = get_currency_converter_client(self.jwt_token)
+        
+    def get_available_currencies(self) -> list:
+        try:
+            return self.client.service.getAvailableCurrencies()
+        except Exception as e:
+            raise CurrencyServiceUnavailableException(str(e))
+
+    def convert(self, from_currency: str, to_currency: str, amount: Decimal) -> Decimal:
+        try:
+            price_in_cent = int(amount * 100)
+            converted_price_in_cent = self.client.service.convert(from_currency, to_currency, price_in_cent)
+            return (Decimal(converted_price_in_cent) / Decimal('100')).quantize(Decimal('0.00'))
+        except Exception as e:
+            raise CurrencyServiceUnavailableException(str(e))
+    
+    def get_currency_rate(self, from_currency: str, to_currency: str) -> Decimal:
+        try:
+            currency_rate_in_cent = self.client.service.convert(from_currency, to_currency, 100)
+            return (Decimal(currency_rate_in_cent) / Decimal('100')).quantize(Decimal('0.00'))
+        except Exception as e:
+            raise CurrencyServiceUnavailableException(str(e))
 
 def get_jwt_token() -> str:
-    dotenv.load_dotenv()
-    client_id = os.getenv("COGNITO_CURRENCY_CONVERTER_CLIENT_ID")
-    client_secret = os.getenv("COGNITO_CURRENCY_CONVERTER_CLIENT_SECRET")
+    client_id = os.getenv("AUTH0_CURRENCY_CONVERTER_CLIENT_ID")
+    client_secret = os.getenv("AUTH0_CURRENCY_CONVERTER_CLIENT_SECRET")
 
-    response = requests.post(
-        'https://eu-central-1hcdydivfb.auth.eu-central-1.amazoncognito.com/oauth2/token',
-        data=f"grant_type=client_credentials&client_id={client_id}&client_secret={client_secret}&scope=default-m2m-resource-server-ww7zvj/read",
-        headers={'Content-Type': 'application/x-www-form-urlencoded'}
-    )
+    try:
+        response = requests.post(
+            'https://dev-nrarsg0w7pf50t7d.us.auth0.com/oauth/token',
+            json= {
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "audience": "https://dev-nrarsg0w7pf50t7d.us.auth0.com/api/v2/",
+                "grant_type": "client_credentials"
+            },
+            headers={'content-type': 'application/json'}
+        )
+        
+        if response.status_code != 200:
+            raise CurrencyServiceUnavailableException(f"Failed to get JWT token: {response.json()}")
+
+        return response.json()['access_token']
+    except Exception as e:
+        raise CurrencyServiceUnavailableException(f"Error getting JWT token: {str(e)}")
     
-    if response.status_code != 200:
-        raise Exception(f"Failed to get JWT token: {response.json()}")
-
-    return response.json()['access_token']
-
+    
 def get_currency_converter_client(jwt_token: str) -> zeep.Client:
-
-    # jwt_token = 'eyJraWQiOiJoODJkaXBpQm9nT0J6UllLNzZuaVFUYXRJcnc3dmlMZlwvTnFoV0JYMDcwVT0iLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIxa3E4N3JpMW03NWFqdWE4c21sc3UwZmc2dCIsInRva2VuX3VzZSI6ImFjY2VzcyIsInNjb3BlIjoiZGVmYXVsdC1tMm0tcmVzb3VyY2Utc2VydmVyLXd3N3p2alwvcmVhZCIsImF1dGhfdGltZSI6MTc0MzI1MTEyNiwiaXNzIjoiaHR0cHM6XC9cL2NvZ25pdG8taWRwLmV1LWNlbnRyYWwtMS5hbWF6b25hd3MuY29tXC9ldS1jZW50cmFsLTFfSGNkWURJVkZCIiwiZXhwIjoxNzQzMjU0NzI2LCJpYXQiOjE3NDMyNTExMjYsInZlcnNpb24iOjIsImp0aSI6IjBhNWIwNzRlLTUzMjYtNDM3ZS1iMWIxLTViN2I1NWMwMTE0MiIsImNsaWVudF9pZCI6IjFrcTg3cmkxbTc1YWp1YThzbWxzdTBmZzZ0In0.mmy_OtR_6WuJCj9JFYQEJnyXxVhntDAceg8tWA8qOLRqEKGdvqWA0Sxmr9GFrT6pMhoy6xnxa6h_DL1lMIc3pxlH_TKfbFcxPnrzrALF94OJsP0hMyKXUd22gphcZawkHWC-Wpsp1AOGUWW_eC1jS79GuLk3z79YVeR8yaUXsyKYSwVUUYTIleMZPbgUaTnu_0oYKEt0enqJaIENCMJVl7eQqfDBxO32i7eKnNImpJ8GH-iLzRhWc_oJ28lklEKrf4SKWv6CezOSYAs69YKEVD929r_LGnsrJnYIghBDtkzpt6Gci99Vock44clTbtOkWMHKllgVIrFjUbHyVVQmCg'
     session = requests.Session()
     session.headers.update({'Authorization': f'Bearer {jwt_token}'})
 
-    transport = zeep.Transport(session=session)
-
-    return zeep.Client('http://localhost:8080/ws/currencies.wsdl', transport=transport)
+    try:
+        transport = zeep.Transport(session=session)
+        return zeep.Client('http://localhost:8080/ws/currencies.wsdl', transport=transport)
+    except Exception as e:
+        raise CurrencyServiceUnavailableException(f"Error connecting to currency converter service: {str(e)}")

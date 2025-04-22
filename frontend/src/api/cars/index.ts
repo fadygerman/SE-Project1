@@ -11,8 +11,8 @@ import {Car} from "@/openapi";
 export const useCarsQuery = () => {
     return useQuery({
         queryKey: ['cars'],
-        queryFn: () =>
-            carsApi.getCarsApiV1CarsGet().then((response) => {
+        queryFn: async () =>
+            await carsApi.getCarsApiV1CarsGet().then((response) => {
                 return response;
             }),
     });

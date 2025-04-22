@@ -1,4 +1,4 @@
-import React, { createContext, useContext } from 'react';
+import { createContext, useContext } from 'react';
 import {Amplify} from 'aws-amplify';
 import { updateUserAttributes, fetchUserAttributes } from 'aws-amplify/auth';
 // @ts-expect-error aws-exports.js is a JavaScript file and not typed

@@ -1,37 +1,111 @@
-from decimal import Decimal
-import exceptions.bookings as booking_exceptions
-from models.db_models import Booking as BookingDB, Car as CarDB, BookingStatus
-from models.models import BookingCreate, BookingUpdate
-from sqlalchemy.orm import Session
 from datetime import date
+from decimal import Decimal
+from typing import List
 
-def create_booking(booking: BookingCreate, db: Session):
-  car = db.query(CarDB).filter(CarDB.id == booking.car_id).first()
-  if not car:
-    raise booking_exceptions.NoCarFoundException(booking.car_id)
-  
-  if not car.is_available:
-    raise booking_exceptions.CarNotAvailableException(booking.car_id)
-  
-  if does_bookings_overlap(booking.car_id, booking.start_date, booking.end_date, db):
-    raise booking_exceptions.BookingOverlapException(booking.car_id)
-  
-  total_cost = calculate_total_cost(car.price_per_day, booking.start_date, booking.end_date)
-  
-  new_booking = BookingDB(
-      user_id=booking.user_id,
-      car_id=booking.car_id,
-      start_date=booking.start_date,
-      end_date=booking.end_date,
-      total_cost=total_cost,
-      status=BookingStatus.PLANNED
-  )
+from fastapi import Depends, HTTPException, status
+from sqlalchemy.orm import Session
 
-  db.add(new_booking)
-  db.commit()
-  db.refresh(new_booking)
+import exceptions.bookings as booking_exceptions
+from currency_converter.client import get_currency_converter_client_instance
+from database import get_db
+from models.db_models import Booking as BookingDB
+from models.db_models import BookingStatus
+from models.db_models import Car as CarDB
+from models.db_models import User as UserDB
+from models.db_models import UserRole
+from models.pydantic.booking import Booking, BookingCreate, BookingUpdate
+from models.pydantic.user import User
+from services.auth_service import get_current_user
 
-  return new_booking
+
+def get_all_bookings(db: Session) -> List[Booking]:
+    bookings_db = db.query(BookingDB).all()
+    bookings = []
+    
+    for booking_db in bookings_db:
+        booking = Booking.model_validate(booking_db)
+        booking.total_cost = convert_booking_currency(booking.total_cost, booking.exchange_rate)
+        bookings.append(booking)
+    
+    return bookings
+
+async def get_booking_with_permission_check(
+    booking_id: int,
+    db: Session = Depends(get_db),
+    current_user_db: UserDB = Depends(get_current_user)
+):
+    """Check if the user has permission to access the specified booking"""
+    from models.db_models import Booking as BookingDB
+    
+    try:
+        booking_db = get_booking_by_id(booking_id, db)
+    except booking_exceptions.BookingNotFoundException as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=e.message
+        )
+    
+    booking = Booking.model_validate(booking_db)
+    current_user = User.model_validate(current_user_db)
+    # Check if it's the user's booking or if they have admin role
+    if booking.user_id != current_user.id and current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, 
+            detail="You can only access your own bookings"
+        )
+    
+    return booking
+
+def get_booking_by_id(booking_id: int, db: Session) -> Booking:
+    booking_db = db.query(BookingDB).filter(BookingDB.id == booking_id).first()
+    
+    if booking_db is None:
+        raise booking_exceptions.BookingNotFoundException(booking_id)
+    
+    booking = Booking.model_validate(booking_db)
+    booking.total_cost = convert_booking_currency(booking.total_cost, booking.exchange_rate)
+    return booking
+
+
+def convert_booking_currency(total_cost_in_usd: Decimal, exchange_rate: Decimal) -> Decimal:
+    return (total_cost_in_usd * exchange_rate).quantize(Decimal('0.00'))
+
+
+def create_booking(booking: BookingCreate, user_id: int, db: Session) -> BookingDB:
+     
+    car = db.query(CarDB).filter(CarDB.id == booking.car_id).first()
+    if not car:
+        raise booking_exceptions.NoCarFoundException(booking.car_id)
+    
+    if not car.is_available:
+        raise booking_exceptions.CarNotAvailableException(booking.car_id)
+    
+    if does_bookings_overlap(booking.car_id, booking.start_date, booking.end_date, db):
+        raise booking_exceptions.BookingOverlapException(booking.car_id)
+    
+    total_cost = calculate_total_cost(car.price_per_day, booking.start_date, booking.end_date)
+    
+    # Exception will be raised if the currency converter service is unavailable
+    currency_converter_client = get_currency_converter_client_instance()
+    exchange_rate = currency_converter_client.get_currency_rate('USD', booking.currency_code.value)
+    
+    new_booking = BookingDB(
+        user_id=user_id,
+        car_id=booking.car_id,
+        start_date=booking.start_date,
+        end_date=booking.end_date,
+        planned_pickup_time=booking.planned_pickup_time,  # Store time in UTC (without timezone)
+        total_cost=total_cost,
+        currency_code=booking.currency_code,
+        exchange_rate=exchange_rate,
+        status=BookingStatus.PLANNED
+    )
+
+    db.add(new_booking)
+    db.commit()
+    db.refresh(new_booking)
+
+    return new_booking
 
 def update_booking(booking_id: int, booking_update: BookingUpdate, db: Session):
     # Get and validate booking
@@ -48,17 +122,18 @@ def update_booking(booking_id: int, booking_update: BookingUpdate, db: Session):
     # Apply all validations
     handle_status_transitions(booking, update_data)
     
-    if validate_date_ordering(booking, update_data, 'start_date', 'end_date'):
+    start_date, end_date = get_updated_booking_period(booking, update_data)
+    if not is_date_ordering_valid(start_date, end_date):
         raise booking_exceptions.DateRangeException()
 
-    start_date, end_date = get_booking_period(booking, update_data)
     if does_bookings_overlap(booking.car_id, start_date, end_date, db, booking.id):
         raise booking_exceptions.BookingOverlapUpdateException()
 
     price_per_day = db.query(CarDB.price_per_day).filter(CarDB.id == booking.car_id).scalar()
     update_data['total_cost'] = calculate_total_cost(price_per_day, start_date, end_date)
 
-    if validate_date_ordering(booking, update_data, 'pickup_date', 'return_date'):
+    pickup_date, return_date = get_updated_usage_period(booking, update_data)
+    if not is_date_ordering_valid(pickup_date, return_date):
         raise booking_exceptions.PickupAfterReturnException()
 
     handle_pickup_date_validations(booking, update_data)
@@ -86,7 +161,11 @@ def does_bookings_overlap(car_id: int, start_date: date, end_date: date, db: Ses
 def calculate_booking_duration(start_date: date, end_date: date):
     """Calculate booking duration in days"""
     return (end_date - start_date).days + 1
-  
+
+def get_car_price_in_currency(car_price: Decimal, to_currency: str) -> Decimal:
+    currency_converter_client = get_currency_converter_client_instance()
+    return currency_converter_client.convert('USD', to_currency, car_price)
+
 def calculate_total_cost(car_price: Decimal, start_date: date, end_date: date): 
     """Calculate total cost based on car price and booking duration"""   
     booking_duration = calculate_booking_duration(start_date, end_date)
@@ -126,28 +205,16 @@ def handle_status_transitions(booking: BookingDB, update_data: dict):
         if 'return_date' not in update_data:
             update_data['return_date'] = date.today()
 
-def validate_date_ordering(booking: BookingDB, update_data: dict, start_date_field: str, end_date_field: str):
-    """ Generic date validation function that ensures one date comes before another. """
-    # Case 1: Both dates are being updated
-    if start_date_field in update_data and end_date_field in update_data:
-        return update_data[end_date_field] < update_data[start_date_field]
-    
-    # Case 2: Only second date is updated, check against existing first date
-    elif end_date_field in update_data and getattr(booking, start_date_field, None):
-        return update_data[end_date_field] < getattr(booking, start_date_field)
-    
-    # Case 3: Only first date is updated, check against existing second date
-    elif start_date_field in update_data and getattr(booking, end_date_field, None):
-        return getattr(booking, end_date_field) < update_data[start_date_field]
-    
-    return False
+def is_date_ordering_valid(start_date: date | None, end_date: date | None):
+    if start_date is None or end_date is None:
+        return True
+    return start_date <= end_date
 
 def handle_pickup_date_validations(booking: BookingDB, update_data: dict):
     """Handle all validations for pickup date"""
     if 'pickup_date' not in update_data:
         return
         
-    # 1. Validate pickup_date can't be in the future
     if is_date_after_today(update_data['pickup_date']):
         raise booking_exceptions.FutureDateException("Pickup")
     
@@ -156,7 +223,7 @@ def handle_pickup_date_validations(booking: BookingDB, update_data: dict):
         update_data['status'] = BookingStatus.ACTIVE
     
     # 3. Ensure pickup_date is within booking period
-    start_date, end_date = get_booking_period(booking, update_data)
+    start_date, end_date = get_updated_booking_period(booking, update_data)
     if not is_date_within_period(update_data['pickup_date'], start_date, end_date):
         raise booking_exceptions.DateOutsideBookingPeriodException("Pickup")
 
@@ -181,7 +248,7 @@ def handle_return_date_validations(booking: BookingDB, update_data: dict):
         raise booking_exceptions.ReturnWithoutPickupException()
     
     # 4. Ensure return_date is within booking period (with OVERDUE exception)
-    start_date, end_date = get_booking_period(booking, update_data)
+    start_date, end_date = get_updated_booking_period(booking, update_data)
     allow_outside = booking.status == BookingStatus.OVERDUE
     if not is_date_within_period(update_data['return_date'], start_date, end_date, allow_outside):
         raise booking_exceptions.DateOutsideBookingPeriodException("Return")
@@ -189,12 +256,18 @@ def handle_return_date_validations(booking: BookingDB, update_data: dict):
 def is_date_after_today(date_value):
     return date_value > date.today()
 
-def get_booking_period(booking, update_data):
+def get_updated_booking_period(booking, update_data):
     """Get the booking start and end dates, accounting for updates"""
     start_date = update_data.get('start_date', booking.start_date)
     end_date = update_data.get('end_date', booking.end_date)
     return start_date, end_date
 
+def get_updated_usage_period(booking, update_data):
+    """Get the booking start and end dates, accounting for updates"""
+    start_date = update_data.get('pickup_date', booking.pickup_date)
+    end_date = update_data.get('return_date', booking.return_date)
+    return start_date, end_date
+ 
 def is_date_within_period(date_value: date, start_date: date, end_date: date, allow_outside=False):
     """Validate that a date is within a period, with optional exception"""
     return date_value >= start_date and (date_value <= end_date or allow_outside)
