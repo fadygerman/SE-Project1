@@ -54,14 +54,11 @@ const Profile: React.FC = () => {
           <h2><a href="">{user.signInDetails.loginId}</a></h2>
         </div>
       </div>
-
-      {/* Pass `isHovered` to control form visibility */}
       <EditProfile
         userAttributes={userAttributes}
         fetchUser={fetchUser}
         isVisible={isHovered}
       />
-
       <div className="slide-down">
         <button onClick={signOut} className="sign-out-button">
           <b>Sign out</b>
