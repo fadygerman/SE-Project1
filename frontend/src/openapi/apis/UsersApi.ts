@@ -35,6 +35,42 @@ export interface GetUserApiV1UsersUserIdGetRequest {
 export class UsersApi extends runtime.BaseAPI {
 
     /**
+     * Get the profile of the currently authenticated user
+     * Get My Profile
+     */
+    async getMyProfileApiV1UsersMeProfileGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<User>> {
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/api/v1/users/me/profile`,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => UserFromJSON(jsonValue));
+    }
+
+    /**
+     * Get the profile of the currently authenticated user
+     * Get My Profile
+     */
+    async getMyProfileApiV1UsersMeProfileGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<User> {
+        const response = await this.getMyProfileApiV1UsersMeProfileGetRaw(initOverrides);
+        return await response.value();
+    }
+
+    /**
      * Get User
      */
     async getUserApiV1UsersUserIdGetRaw(requestParameters: GetUserApiV1UsersUserIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<User>> {
@@ -49,6 +85,14 @@ export class UsersApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
         const response = await this.request({
             path: `/api/v1/users/{user_id}`.replace(`{${"user_id"}}`, encodeURIComponent(String(requestParameters['userId']))),
             method: 'GET',
@@ -75,6 +119,14 @@ export class UsersApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
         const response = await this.request({
             path: `/api/v1/users/`,
             method: 'GET',

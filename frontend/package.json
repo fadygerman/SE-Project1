@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@aws-amplify/auth": "^6.12.2",
     "@aws-amplify/ui-react": "^6.11.0",
     "@openapitools/openapi-generator-cli": "^2.18.4",
     "@radix-ui/react-dialog": "^1.1.6",

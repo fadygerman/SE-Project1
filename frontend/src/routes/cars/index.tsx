@@ -9,11 +9,16 @@ export const Route = createFileRoute('/cars/')({
 })
 
 function RouteComponent() {
-  const {data: cars, error} = useCarsQuery();
-  if (!cars)  {
-    return <div>Loading...</div>
-  }
-  return (
+    const {data: cars, isLoading, error} = useCarsQuery();
+    console.log(cars)
+    if (!cars)  {
+        return <div>No Cars</div>
+    }
+    if (isLoading)  {
+        return <div>Loading ...</div>
+    }
+
+    return (
     <div className="container mx-auto p-4">
       <header className="mb-6">
         <Breadcrumb>

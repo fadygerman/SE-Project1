@@ -41,7 +41,7 @@ async def register_cognito_user(
             
     except UnauthorizedException as e:
         # Pass through our custom exceptions
-        raise 
+        raise
     except Exception as e:
         raise UnauthorizedException(
             detail=f"Invalid token: {str(e)}"
@@ -76,7 +76,7 @@ async def register_cognito_user(
 @router.get("/public")
 async def public_endpoint():
     """Public endpoint that doesn't require authentication"""
-    return {"message": "This is a public endpoint"}
+    return {"message": "This endpoint"}
 
 # Protected endpoint - for testing authentication
 @router.get("/protected")

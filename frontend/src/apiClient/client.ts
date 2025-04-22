@@ -1,9 +1,20 @@
-import {BookingsApi, CarsApi, Configuration, DefaultApi} from "@/openapi";
+import {BookingsApi, CarsApi, Configuration} from "@/openapi";
+import {fetchAuthSession} from "@aws-amplify/auth";
 
-const config = new Configuration({
-    basePath: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
-});
+async function makeConfig(): Promise<Configuration> {
+    const session = await fetchAuthSession();
+    const jwt = session.tokens?.idToken?.toString();
+    console.log(session.tokens)
+    console.log(jwt)
+    if (!jwt) {
+        throw new Error("No ID token found in session.");
+    }
 
-export const carsApi = new CarsApi(config);
-export const bookingApi = new BookingsApi(config);
-export const currencyApi = new CarsApi(config);
+    return new Configuration({
+        basePath: import.meta.env.VITE_API_BASE_URL || "http://localhost:8000",
+        accessToken: jwt,
+    });
+}
+
+export const carsApi = await (async () => new CarsApi(await makeConfig()))();
+export const bookingApi = await (async () => new BookingsApi(await makeConfig()))();

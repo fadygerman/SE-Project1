@@ -27,6 +27,11 @@ import {
 
 export interface GetCarApiV1CarsCarIdGetRequest {
     carId: number;
+    currencyCode?: GetCarApiV1CarsCarIdGetCurrencyCodeEnum;
+}
+
+export interface GetCarsApiV1CarsGetRequest {
+    currencyCode?: GetCarsApiV1CarsGetCurrencyCodeEnum;
 }
 
 /**
@@ -47,8 +52,20 @@ export class CarsApi extends runtime.BaseAPI {
 
         const queryParameters: any = {};
 
+        if (requestParameters['currencyCode'] != null) {
+            queryParameters['currency_code'] = requestParameters['currencyCode'];
+        }
+
         const headerParameters: runtime.HTTPHeaders = {};
 
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
         const response = await this.request({
             path: `/api/v1/cars/{car_id}`.replace(`{${"car_id"}}`, encodeURIComponent(String(requestParameters['carId']))),
             method: 'GET',
@@ -70,11 +87,23 @@ export class CarsApi extends runtime.BaseAPI {
     /**
      * Get Cars
      */
-    async getCarsApiV1CarsGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Car>>> {
+    async getCarsApiV1CarsGetRaw(requestParameters: GetCarsApiV1CarsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Car>>> {
         const queryParameters: any = {};
+
+        if (requestParameters['currencyCode'] != null) {
+            queryParameters['currency_code'] = requestParameters['currencyCode'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("HTTPBearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
         const response = await this.request({
             path: `/api/v1/cars/`,
             method: 'GET',
@@ -88,9 +117,84 @@ export class CarsApi extends runtime.BaseAPI {
     /**
      * Get Cars
      */
-    async getCarsApiV1CarsGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Car>> {
-        const response = await this.getCarsApiV1CarsGetRaw(initOverrides);
+    async getCarsApiV1CarsGet(requestParameters: GetCarsApiV1CarsGetRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Car>> {
+        const response = await this.getCarsApiV1CarsGetRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
 }
+
+/**
+ * @export
+ */
+export const GetCarApiV1CarsCarIdGetCurrencyCodeEnum = {
+    Usd: 'USD',
+    Jpy: 'JPY',
+    Bgn: 'BGN',
+    Czk: 'CZK',
+    Dkk: 'DKK',
+    Gbp: 'GBP',
+    Huf: 'HUF',
+    Pln: 'PLN',
+    Ron: 'RON',
+    Sek: 'SEK',
+    Chf: 'CHF',
+    Isk: 'ISK',
+    Nok: 'NOK',
+    Try: 'TRY',
+    Aud: 'AUD',
+    Brl: 'BRL',
+    Cad: 'CAD',
+    Cny: 'CNY',
+    Hkd: 'HKD',
+    Idr: 'IDR',
+    Ils: 'ILS',
+    Inr: 'INR',
+    Krw: 'KRW',
+    Mxn: 'MXN',
+    Myr: 'MYR',
+    Nzd: 'NZD',
+    Php: 'PHP',
+    Sgd: 'SGD',
+    Thb: 'THB',
+    Zar: 'ZAR',
+    Eur: 'EUR'
+} as const;
+export type GetCarApiV1CarsCarIdGetCurrencyCodeEnum = typeof GetCarApiV1CarsCarIdGetCurrencyCodeEnum[keyof typeof GetCarApiV1CarsCarIdGetCurrencyCodeEnum];
+/**
+ * @export
+ */
+export const GetCarsApiV1CarsGetCurrencyCodeEnum = {
+    Usd: 'USD',
+    Jpy: 'JPY',
+    Bgn: 'BGN',
+    Czk: 'CZK',
+    Dkk: 'DKK',
+    Gbp: 'GBP',
+    Huf: 'HUF',
+    Pln: 'PLN',
+    Ron: 'RON',
+    Sek: 'SEK',
+    Chf: 'CHF',
+    Isk: 'ISK',
+    Nok: 'NOK',
+    Try: 'TRY',
+    Aud: 'AUD',
+    Brl: 'BRL',
+    Cad: 'CAD',
+    Cny: 'CNY',
+    Hkd: 'HKD',
+    Idr: 'IDR',
+    Ils: 'ILS',
+    Inr: 'INR',
+    Krw: 'KRW',
+    Mxn: 'MXN',
+    Myr: 'MYR',
+    Nzd: 'NZD',
+    Php: 'PHP',
+    Sgd: 'SGD',
+    Thb: 'THB',
+    Zar: 'ZAR',
+    Eur: 'EUR'
+} as const;
+export type GetCarsApiV1CarsGetCurrencyCodeEnum = typeof GetCarsApiV1CarsGetCurrencyCodeEnum[keyof typeof GetCarsApiV1CarsGetCurrencyCodeEnum];

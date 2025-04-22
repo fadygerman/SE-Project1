@@ -13,71 +13,48 @@
  */
 
 import { mapValues } from '../runtime';
-import type { UserRole } from './UserRole';
-import {
-    UserRoleFromJSON,
-    UserRoleFromJSONTyped,
-    UserRoleToJSON,
-    UserRoleToJSONTyped,
-} from './UserRole';
-
 /**
  * 
  * @export
- * @interface User
+ * @interface UserRegister
  */
-export interface User {
-    /**
-     * 
-     * @type {number}
-     * @memberof User
-     */
-    id: number;
+export interface UserRegister {
     /**
      * User's first name
      * @type {string}
-     * @memberof User
+     * @memberof UserRegister
      */
     firstName: string;
     /**
      * User's last name
      * @type {string}
-     * @memberof User
+     * @memberof UserRegister
      */
     lastName: string;
     /**
      * User's email address
      * @type {string}
-     * @memberof User
+     * @memberof UserRegister
      */
     email: string;
     /**
      * User's phone number
      * @type {string}
-     * @memberof User
+     * @memberof UserRegister
      */
     phoneNumber: string;
     /**
-     * AWS Cognito user ID
+     * AWS Cognito user ID (sub claim)
      * @type {string}
-     * @memberof User
+     * @memberof UserRegister
      */
     cognitoId: string;
-    /**
-     * User's role
-     * @type {UserRole}
-     * @memberof User
-     */
-    role?: UserRole;
 }
 
-
-
 /**
- * Check if a given object implements the User interface.
+ * Check if a given object implements the UserRegister interface.
  */
-export function instanceOfUser(value: object): value is User {
-    if (!('id' in value) || value['id'] === undefined) return false;
+export function instanceOfUserRegister(value: object): value is UserRegister {
     if (!('firstName' in value) || value['firstName'] === undefined) return false;
     if (!('lastName' in value) || value['lastName'] === undefined) return false;
     if (!('email' in value) || value['email'] === undefined) return false;
@@ -86,44 +63,40 @@ export function instanceOfUser(value: object): value is User {
     return true;
 }
 
-export function UserFromJSON(json: any): User {
-    return UserFromJSONTyped(json, false);
+export function UserRegisterFromJSON(json: any): UserRegister {
+    return UserRegisterFromJSONTyped(json, false);
 }
 
-export function UserFromJSONTyped(json: any, ignoreDiscriminator: boolean): User {
+export function UserRegisterFromJSONTyped(json: any, ignoreDiscriminator: boolean): UserRegister {
     if (json == null) {
         return json;
     }
     return {
         
-        'id': json['id'],
         'firstName': json['first_name'],
         'lastName': json['last_name'],
         'email': json['email'],
         'phoneNumber': json['phone_number'],
         'cognitoId': json['cognito_id'],
-        'role': json['role'] == null ? undefined : UserRoleFromJSON(json['role']),
     };
 }
 
-export function UserToJSON(json: any): User {
-    return UserToJSONTyped(json, false);
+export function UserRegisterToJSON(json: any): UserRegister {
+    return UserRegisterToJSONTyped(json, false);
 }
 
-export function UserToJSONTyped(value?: User | null, ignoreDiscriminator: boolean = false): any {
+export function UserRegisterToJSONTyped(value?: UserRegister | null, ignoreDiscriminator: boolean = false): any {
     if (value == null) {
         return value;
     }
 
     return {
         
-        'id': value['id'],
         'first_name': value['firstName'],
         'last_name': value['lastName'],
         'email': value['email'],
         'phone_number': value['phoneNumber'],
         'cognito_id': value['cognitoId'],
-        'role': UserRoleToJSON(value['role']),
     };
 }
 
