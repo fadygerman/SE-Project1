@@ -1,16 +1,14 @@
-import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbPage, BreadcrumbLink, BreadcrumbSeparator } from '@/components/ui/breadcrumb'
+import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import { Card, CardHeader, CardContent, CardTitle, CardFooter, CardDescription } from '@/components/ui/card'
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { format } from 'date-fns'
-import { CalendarIcon, Car, IdCardIcon } from 'lucide-react'
+import { CalendarIcon } from 'lucide-react'
 import { useState } from 'react'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {useCarIdQuery} from "@/api/cars";
 import {useCreateBookingMutation} from "@/api/bookings";
@@ -38,13 +36,14 @@ function RouteComponent() {
       setIsBooking(false)
     }, 2000)
     addBooking.mutate({
-        userId: 1,
-        carId: carId,
+        carId: Number(carId),
         startDate: dateRange.from,
         endDate: dateRange.to,
+        plannedPickupTime: "23:12",
+        currencyCode:"USD",
         })
   }
-  const carDetail = useCarIdQuery(carId);
+  const carDetail = useCarIdQuery(Number(carId));
   const addBooking = useCreateBookingMutation();
   return (
     <div className="container mx-auto p-4">

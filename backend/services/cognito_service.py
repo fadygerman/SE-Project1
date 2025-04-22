@@ -1,8 +1,12 @@
+import logging
 import os
 import jwt
 from jwt import PyJWKClient
+import sys
 
 from exceptions.auth import ConfigurationError, InvalidTokenException
+
+logger = logging.getLogger(__name__)
 
 # Cognito configuration
 COGNITO_REGION = os.getenv("COGNITO_REGION", "eu-north-1")
@@ -23,8 +27,9 @@ def verify_cognito_jwt(token: str):
     """Verify a JWT token from AWS Cognito"""
     try:
         # Create JWKS client with proper timeout
-        jwk_client = PyJWKClient(JWKS_URL, timeout=10)
-        
+        print(">>> JWKS_URL is:", JWKS_URL, file=sys.stderr)
+        jwk_client = PyJWKClient(JWKS_URL)
+
         # Get signing key
         signing_key = jwk_client.get_signing_key_from_jwt(token)
         
@@ -43,4 +48,5 @@ def verify_cognito_jwt(token: str):
         )
         return payload
     except Exception as e:
+        logger.exception("JWT verification failed")
         raise InvalidTokenException()

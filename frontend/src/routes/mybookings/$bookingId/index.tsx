@@ -10,7 +10,7 @@ export const Route = createFileRoute('/mybookings/$bookingId/')({
 function RouteComponent() {
     const { bookingId } = Route.useParams();
     const { data: booking, error, isLoading } = useBookingIdQuery(Number(bookingId));
-    console.log(booking)
+
     if (isLoading) {
         return <div>Loading booking details...</div>;
     }
@@ -39,7 +39,7 @@ function RouteComponent() {
                         <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div>
                                 <dt className="text-sm font-medium text-muted-foreground">User ID</dt>
-                                <dd className="text-lg">{booking.user.email}</dd>
+                                <dd className="text-lg">{booking.user?.email}</dd>
                             </div>
                             <div>
                                 <dt className="text-sm font-medium text-muted-foreground">Car ID</dt>
