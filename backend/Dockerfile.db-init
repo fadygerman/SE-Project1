@@ -1,0 +1,20 @@
+FROM python:3.13-alpine
+
+WORKDIR /app
+
+# Copy only the requirements file first to leverage Docker cache
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the rest of the application code
+COPY . .
+
+# Set environment variables to connect to the database container
+ENV DB_HOST=postgres
+ENV DB_PORT=5432
+ENV DB_NAME=car_rental
+ENV DB_USERNAME=postgres
+ENV DB_PASSWORD=postgres
+
+# Run the seed script
+CMD ["python", "db_seed.py"] 
