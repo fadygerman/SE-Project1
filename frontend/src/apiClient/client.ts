@@ -9,9 +9,6 @@ import {
 } from '@/openapi';
 import { fetchAuthSession } from '@aws-amplify/auth';
 
-/* ──────────────────────────────────────────────────────────
- *  makeConfig – builds an OpenAPI Configuration
- * ────────────────────────────────────────────────────────── */
 async function makeConfig(useIdToken = false): Promise<Configuration> {
     const session = await fetchAuthSession();
 
@@ -31,10 +28,6 @@ async function makeConfig(useIdToken = false): Promise<Configuration> {
     });
 }
 
-/* ──────────────────────────────────────────────────────────
- *  registerCurrentUser – calls /auth/register‑cognito‑user
- *  exactly once, using the ID token’s richer claims
- * ────────────────────────────────────────────────────────── */
 async function registerCurrentUser(): Promise<void> {
     const session = await fetchAuthSession();
     const claims = session.tokens?.idToken?.payload as any;
@@ -55,17 +48,11 @@ async function registerCurrentUser(): Promise<void> {
         });
         console.info('[registerCurrentUser] ✔ user registered/updated');
     } catch (e: any) {
-        // If something is still wrong, log FastAPI’s validation detail
         const detail: HTTPValidationError | undefined = e?.body;
         console.error('[registerCurrentUser] 422 detail:', detail);
-        // swallow the error so the app keeps running
     }
 }
 
-/* ──────────────────────────────────────────────────────────
- *  Run the registration once, then export the normal APIs
- *  (which use Access‑Token configs)
- * ────────────────────────────────────────────────────────── */
 await registerCurrentUser();
 
 export const carsApi = await (async () => new CarsApi(await makeConfig()))();

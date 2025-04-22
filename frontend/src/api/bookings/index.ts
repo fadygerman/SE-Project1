@@ -8,7 +8,7 @@ export const useBookingsQuery = () => {
     return useQuery({
         queryKey: ['bookings'],
         queryFn: () =>
-            bookingApi.getBookingsApiV1BookingsGet().then((response) => {
+            bookingApi.getMyBookingsApiV1BookingsMyGet().then((response) => {
                 return response;
             }),
     });

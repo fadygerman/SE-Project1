@@ -30,19 +30,19 @@ function RouteComponent() {
       return
     }
     setIsBooking(true)
-    // Simulate booking process
     setTimeout(() => {
       alert(`Car booked from ${dateRange.from ? format(dateRange.from, "PPP") : "N/A"} to ${dateRange.to ? format(dateRange.to, "PPP") : "N/A"}`)
       setIsBooking(false)
     }, 2000)
     addBooking.mutate({
         carId: Number(carId),
-        startDate: dateRange.from,
-        endDate: dateRange.to,
+        startDate: new Date("2025-10-07"),
+        endDate: new Date("2025-10-10"),
         plannedPickupTime: "23:12",
         currencyCode:"USD",
         })
   }
+  console.log(carId)
   const carDetail = useCarIdQuery(Number(carId));
   const addBooking = useCreateBookingMutation();
   return (
