@@ -1,6 +1,12 @@
 import React, { useCallback } from 'react';
 import { GoogleMap, LoadScript } from '@react-google-maps/api';
 
+export interface MapComponentProps {
+  center: {
+    lat: number;
+    lng: number;
+  };
+}
 const divStyle = {
   display: 'flex',
   justifyContent: 'center', 
@@ -15,12 +21,7 @@ const containerStyle = {
   borderRadius: '10px',
 };
 
-interface MapComponentProps {
-  center: {
-    lat: number;
-    lng: number;
-  };
-}
+
 
 // HOW TO USE: <MapComponent center={{ lat: 48.2082, lng: 16.3738 }}></MapComponent> // optionally MapComponentProps can be enhanced
 
