@@ -48,7 +48,7 @@ const EditProfile: React.FC<EditProfileProps> = ({ userAttributes, fetchUser, is
       setIsEditing(false);
     } catch (err) {
       console.error(err);
-      alert('Update failed');
+      alert(`${err instanceof Error ? err.message : ''}`);
     } finally {
       setLoading(false);
     }
