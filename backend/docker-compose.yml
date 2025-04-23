@@ -34,5 +34,25 @@ services:
         condition: service_healthy
     restart: on-failure
 
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: car_rental_api
+    ports:
+      - "${API_PORT:-8000}:8000"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME:-car_rental}
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
 volumes:
   postgres_data: 
