@@ -16,6 +16,8 @@ from models.db_models import Base, Booking, BookingStatus, Car, User, UserRole
 
 # Create all tables in the database
 def init_db():
+    Base.metadata.drop_all(bind=engine)
+    print("Existing tables dropped!")
     Base.metadata.create_all(bind=engine)
     print("Database created!")
 
