@@ -1,3 +1,4 @@
+import logging
 import os
 import jwt
 from jwt import PyJWKClient
@@ -22,11 +23,20 @@ JWKS_URL = f"https://cognito-idp.{COGNITO_REGION}.amazonaws.com/{COGNITO_USER_PO
 def verify_cognito_jwt(token: str):
     """Verify a JWT token from AWS Cognito"""
     try:
+        # Log token information for debugging (header only, not the full token)
+        header = jwt.get_unverified_header(token)
+        logging.info(f"Verifying token with kid: {header.get('kid')}, alg: {header.get('alg')}")
+        logging.info(f"Using JWKS URL: {JWKS_URL}")
+        
         # Create JWKS client with proper timeout
         jwk_client = PyJWKClient(JWKS_URL, timeout=10)
         
         # Get signing key
-        signing_key = jwk_client.get_signing_key_from_jwt(token)
+        try:
+            signing_key = jwk_client.get_signing_key_from_jwt(token)
+        except jwt.exceptions.PyJWKClientError as e:
+            logging.error(f"JWKS key error: {str(e)}")
+            raise InvalidTokenException(f"Token verification failed: {str(e)}")
         
         # Decode and verify token
         payload = jwt.decode(
@@ -43,4 +53,5 @@ def verify_cognito_jwt(token: str):
         )
         return payload
     except Exception as e:
+        logging.error(f"Token verification error: {str(e)}")
         raise InvalidTokenException()
