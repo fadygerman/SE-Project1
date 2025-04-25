@@ -9,6 +9,10 @@ To run this script, execute the following command in the terminal:
 from datetime import date, time, timedelta
 from decimal import Decimal
 
+import dotenv
+
+dotenv.load_dotenv()
+
 from database import SessionLocal, engine
 from models.currencies import Currency
 from models.db_models import Base, Booking, BookingStatus, Car, User, UserRole
