@@ -71,9 +71,10 @@ def get_jwt_token() -> str:
 def get_currency_converter_client(jwt_token: str) -> zeep.Client:
     session = requests.Session()
     session.headers.update({'Authorization': f'Bearer {jwt_token}'})
+    currency_converter_host = os.getenv("CURRENCY_CONVERTER_HOST")
 
     try:
         transport = zeep.Transport(session=session)
-        return zeep.Client('http://localhost:8080/ws/currencies.wsdl', transport=transport)
+        return zeep.Client(f'{currency_converter_host}/ws/currencies.wsdl', transport=transport)
     except Exception as e:
         raise CurrencyServiceUnavailableException(f"Error connecting to currency converter service: {str(e)}")

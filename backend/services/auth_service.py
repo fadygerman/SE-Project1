@@ -43,6 +43,8 @@ async def get_current_user(
             
             # Extract user details from token
             given_name = payload.get('given_name', '')
+            if not given_name and payload.get('name'):
+                given_name = payload.get('name')
             family_name = payload.get('family_name', '')
             phone = payload.get('phone_number', '')
             
