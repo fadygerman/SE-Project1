@@ -5,10 +5,8 @@ import dotenv
 
 dotenv.load_dotenv()
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
 
 from routes.v1 import auth_routes, booking_routes, car_routes, user_routes
 
