@@ -16,9 +16,32 @@
 import * as runtime from '../runtime';
 
 /**
+ * DefaultApi - interface
+ * 
+ * @export
+ * @interface DefaultApiInterface
+ */
+export interface DefaultApiInterface {
+    /**
+     * 
+     * @summary Health Check
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApiInterface
+     */
+    healthCheckHealthGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>>;
+
+    /**
+     * Health Check
+     */
+    healthCheckHealthGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any>;
+
+}
+
+/**
  * 
  */
-export class DefaultApi extends runtime.BaseAPI {
+export class DefaultApi extends runtime.BaseAPI implements DefaultApiInterface {
 
     /**
      * Health Check
@@ -47,36 +70,6 @@ export class DefaultApi extends runtime.BaseAPI {
      */
     async healthCheckHealthGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
         const response = await this.healthCheckHealthGetRaw(initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Root
-     */
-    async rootGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        const response = await this.request({
-            path: `/`,
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        if (this.isJsonMime(response.headers.get('content-type'))) {
-            return new runtime.JSONApiResponse<any>(response);
-        } else {
-            return new runtime.TextApiResponse(response) as any;
-        }
-    }
-
-    /**
-     * Root
-     */
-    async rootGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
-        const response = await this.rootGetRaw(initOverrides);
         return await response.value();
     }
 

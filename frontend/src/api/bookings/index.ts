@@ -3,12 +3,27 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Booking, BookingCreate, BookingUpdate } from "@/openapi";
 import {bookingApi} from "@/apiClient/client.ts";
 
+// Define an interface for the paginated response
+interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  page_size: number;
+  pages: number;
+}
+
 // Fetch all bookings
 export const useBookingsQuery = () => {
     return useQuery({
         queryKey: ['bookings'],
         queryFn: () =>
-            bookingApi.getMyBookingsApiV1BookingsMyGet().then((response) => {
+            bookingApi.getMyBookingsApiV1BookingsMyGet().then((response: any) => {
+                // Check if the response has the new pagination structure
+                if (response && response.items) {
+                    // Return just the items array to maintain compatibility
+                    return response.items;
+                }
+                // Fall back to the original response format if needed
                 return response;
             }),
     });
@@ -33,7 +48,7 @@ export const useCreateBookingMutation = () => {
         mutationFn: (newBooking: BookingCreate) =>
             bookingApi.createBookingApiV1BookingsPost({ bookingCreate: newBooking }),
         onSuccess: () => {
-            queryClient.invalidateQueries(['bookings']); // Refetch bookings after creation
+            queryClient.invalidateQueries({ queryKey: ['bookings'] }); // Fixed: proper object syntax
         },
     });
 };
@@ -45,7 +60,19 @@ export const useUpdateBookingMutation = () => {
         mutationFn: ({ bookingId, bookingUpdate }: { bookingId: number; bookingUpdate: BookingUpdate }) =>
             bookingApi.updateBookingApiV1BookingsBookingIdPut({ bookingId, bookingUpdate }),
         onSuccess: () => {
-            queryClient.invalidateQueries(['bookings']); // Refetch bookings after update
+            queryClient.invalidateQueries({ queryKey: ['bookings'] }); // Fixed: proper object syntax
         },
+    });
+};
+
+// Optional: Add a hook for paginated access if you want to use pagination in the UI later
+export const usePaginatedBookingsQuery = (page = 1, pageSize = 10) => {
+    return useQuery({
+        queryKey: ['bookings', 'paginated', page, pageSize],
+        queryFn: async () =>
+            await bookingApi.getMyBookingsApiV1BookingsMyGet().then((response: any) => {
+                // Return the full response with pagination info
+                return response as PaginatedResponse<Booking>;
+            }),
     });
 };

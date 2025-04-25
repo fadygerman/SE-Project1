@@ -7,6 +7,8 @@ export * from './BookingUpdate';
 export * from './Car';
 export * from './Currency';
 export * from './HTTPValidationError';
+export * from './PaginatedResponseBooking';
+export * from './PaginatedResponseCar';
 export * from './User';
 export * from './UserRegister';
 export * from './UserRole';

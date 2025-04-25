@@ -17,12 +17,15 @@ import * as runtime from '../runtime';
 import type {
   Car,
   HTTPValidationError,
+  PaginatedResponseCar,
 } from '../models/index';
 import {
     CarFromJSON,
     CarToJSON,
     HTTPValidationErrorFromJSON,
     HTTPValidationErrorToJSON,
+    PaginatedResponseCarFromJSON,
+    PaginatedResponseCarToJSON,
 } from '../models/index';
 
 export interface GetCarApiV1CarsCarIdGetRequest {
@@ -31,13 +34,66 @@ export interface GetCarApiV1CarsCarIdGetRequest {
 }
 
 export interface GetCarsApiV1CarsGetRequest {
+    page?: number;
+    pageSize?: number;
+    name?: string | null;
+    availableOnly?: boolean;
+    sortBy?: string;
+    sortOrder?: string;
     currencyCode?: GetCarsApiV1CarsGetCurrencyCodeEnum;
+}
+
+/**
+ * CarsApi - interface
+ * 
+ * @export
+ * @interface CarsApiInterface
+ */
+export interface CarsApiInterface {
+    /**
+     * 
+     * @summary Get Car
+     * @param {number} carId 
+     * @param {'USD' | 'JPY' | 'BGN' | 'CZK' | 'DKK' | 'GBP' | 'HUF' | 'PLN' | 'RON' | 'SEK' | 'CHF' | 'ISK' | 'NOK' | 'TRY' | 'AUD' | 'BRL' | 'CAD' | 'CNY' | 'HKD' | 'IDR' | 'ILS' | 'INR' | 'KRW' | 'MXN' | 'MYR' | 'NZD' | 'PHP' | 'SGD' | 'THB' | 'ZAR' | 'EUR'} [currencyCode] Currency code to convert price to
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof CarsApiInterface
+     */
+    getCarApiV1CarsCarIdGetRaw(requestParameters: GetCarApiV1CarsCarIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Car>>;
+
+    /**
+     * Get Car
+     */
+    getCarApiV1CarsCarIdGet(requestParameters: GetCarApiV1CarsCarIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Car>;
+
+    /**
+     * Get all cars with filtering, sorting and pagination.
+     * @summary Get Cars
+     * @param {number} [page] Page number
+     * @param {number} [pageSize] Number of items per page
+     * @param {string} [name] Filter by car name or model
+     * @param {boolean} [availableOnly] Show only available cars
+     * @param {string} [sortBy] Field to sort by
+     * @param {string} [sortOrder] Sort order (asc or desc)
+     * @param {'USD' | 'JPY' | 'BGN' | 'CZK' | 'DKK' | 'GBP' | 'HUF' | 'PLN' | 'RON' | 'SEK' | 'CHF' | 'ISK' | 'NOK' | 'TRY' | 'AUD' | 'BRL' | 'CAD' | 'CNY' | 'HKD' | 'IDR' | 'ILS' | 'INR' | 'KRW' | 'MXN' | 'MYR' | 'NZD' | 'PHP' | 'SGD' | 'THB' | 'ZAR' | 'EUR'} [currencyCode] Currency code to convert prices to
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof CarsApiInterface
+     */
+    getCarsApiV1CarsGetRaw(requestParameters: GetCarsApiV1CarsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PaginatedResponseCar>>;
+
+    /**
+     * Get all cars with filtering, sorting and pagination.
+     * Get Cars
+     */
+    getCarsApiV1CarsGet(requestParameters: GetCarsApiV1CarsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PaginatedResponseCar>;
+
 }
 
 /**
  * 
  */
-export class CarsApi extends runtime.BaseAPI {
+export class CarsApi extends runtime.BaseAPI implements CarsApiInterface {
 
     /**
      * Get Car
@@ -85,10 +141,35 @@ export class CarsApi extends runtime.BaseAPI {
     }
 
     /**
+     * Get all cars with filtering, sorting and pagination.
      * Get Cars
      */
-    async getCarsApiV1CarsGetRaw(requestParameters: GetCarsApiV1CarsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Car>>> {
+    async getCarsApiV1CarsGetRaw(requestParameters: GetCarsApiV1CarsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PaginatedResponseCar>> {
         const queryParameters: any = {};
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['pageSize'] != null) {
+            queryParameters['page_size'] = requestParameters['pageSize'];
+        }
+
+        if (requestParameters['name'] != null) {
+            queryParameters['name'] = requestParameters['name'];
+        }
+
+        if (requestParameters['availableOnly'] != null) {
+            queryParameters['available_only'] = requestParameters['availableOnly'];
+        }
+
+        if (requestParameters['sortBy'] != null) {
+            queryParameters['sort_by'] = requestParameters['sortBy'];
+        }
+
+        if (requestParameters['sortOrder'] != null) {
+            queryParameters['sort_order'] = requestParameters['sortOrder'];
+        }
 
         if (requestParameters['currencyCode'] != null) {
             queryParameters['currency_code'] = requestParameters['currencyCode'];
@@ -111,13 +192,14 @@ export class CarsApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(CarFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PaginatedResponseCarFromJSON(jsonValue));
     }
 
     /**
+     * Get all cars with filtering, sorting and pagination.
      * Get Cars
      */
-    async getCarsApiV1CarsGet(requestParameters: GetCarsApiV1CarsGetRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Car>> {
+    async getCarsApiV1CarsGet(requestParameters: GetCarsApiV1CarsGetRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PaginatedResponseCar> {
         const response = await this.getCarsApiV1CarsGetRaw(requestParameters, initOverrides);
         return await response.value();
     }

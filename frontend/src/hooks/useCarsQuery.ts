@@ -1,7 +1,15 @@
-import { useQuery } from '@tanstack/react-query';
-import { carsApi } from "@/apiClient/client.ts";
-import { Car } from "@/openapi";
+import {useQuery} from '@tanstack/react-query';
+import {carsApi} from "@/apiClient/client.ts";
+import {Car} from "@/openapi";
 
+// Define an interface for the paginated response
+interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  page_size: number;
+  pages: number;
+}
 
 // Custom hook using useQuery for fetching cars
 export const useCarsQuery = () => {
@@ -31,3 +39,17 @@ export const useCarIdQuery = (carId: number) => {
         enabled: !!carId, // Ensures the query only runs if carId is provided
     }).data as Car;
 };
+
+// Optional: Add a hook for paginated access if you want to use pagination in the UI later
+export const usePaginatedCarsQuery = (page = 1, pageSize = 10) => {
+    return useQuery({
+        queryKey: ['cars', 'paginated', page, pageSize],
+        queryFn: async () =>
+            await carsApi.getCarsApiV1CarsGet().then((response: any) => {
+                // Return the full response with pagination info
+                return response as PaginatedResponse<Car>;
+            }),
+    });
+};
+
+export * from '@/api/cars/index';
