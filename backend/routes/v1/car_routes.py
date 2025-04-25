@@ -1,4 +1,4 @@
-from typing import Annotated, List, Optional
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
@@ -22,7 +22,7 @@ router = APIRouter(
 async def get_cars(
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(10, ge=1, le=100, description="Number of items per page"),
-    name: Optional[str] = Query(None, description="Filter by car name or model"),
+    name: str | None = Query(None, description="Filter by car name or model"),
     available_only: bool = Query(False, description="Show only available cars"),
     sort_by: str = Query("id", description="Field to sort by"),
     sort_order: str = Query("asc", description="Sort order (asc or desc)"),

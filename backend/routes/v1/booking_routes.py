@@ -1,5 +1,3 @@
-from typing import List, Optional
-
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, status as api_status
 from sqlalchemy.orm import Session
 
@@ -24,12 +22,12 @@ router = APIRouter(
 async def get_bookings(
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(10, ge=1, le=100, description="Number of items per page"),
-    status: Optional[str] = Query(None, description="Filter by booking status"),
-    car_id: Optional[int] = Query(None, description="Filter by car ID"),
-    start_date_from: Optional[str] = Query(None, description="Filter bookings with start date from"),
-    start_date_to: Optional[str] = Query(None, description="Filter bookings with start date to"),
-    end_date_from: Optional[str] = Query(None, description="Filter bookings with end date from"),
-    end_date_to: Optional[str] = Query(None, description="Filter bookings with end date to"),
+    status: str | None = Query(None, description="Filter by booking status"),
+    car_id: int | None = Query(None, description="Filter by car ID"),
+    start_date_from: str | None = Query(None, description="Filter bookings with start date from"),
+    start_date_to: str | None = Query(None, description="Filter bookings with start date to"),
+    end_date_from: str | None = Query(None, description="Filter bookings with end date from"),
+    end_date_to: str | None = Query(None, description="Filter bookings with end date to"),
     sort_by: str = Query("id", description="Field to sort by"),
     sort_order: str = Query("asc", description="Sort order (asc or desc)"),
     db: Session = Depends(get_db), 
@@ -63,12 +61,12 @@ async def get_bookings(
 async def get_my_bookings(
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(10, ge=1, le=100, description="Number of items per page"),
-    status: Optional[str] = Query(None, description="Filter by booking status"),
-    car_id: Optional[int] = Query(None, description="Filter by car ID"),
-    start_date_from: Optional[str] = Query(None, description="Filter bookings with start date from"),
-    start_date_to: Optional[str] = Query(None, description="Filter bookings with start date to"),
-    end_date_from: Optional[str] = Query(None, description="Filter bookings with end date from"),
-    end_date_to: Optional[str] = Query(None, description="Filter bookings with end date to"),
+    status: str | None = Query(None, description="Filter by booking status"),
+    car_id: int | None = Query(None, description="Filter by car ID"),
+    start_date_from: str | None = Query(None, description="Filter bookings with start date from"),
+    start_date_to: str | None = Query(None, description="Filter bookings with start date to"),
+    end_date_from: str | None = Query(None, description="Filter bookings with end date from"),
+    end_date_to: str | None = Query(None, description="Filter bookings with end date to"),
     sort_by: str = Query("id", description="Field to sort by"),
     sort_order: str = Query("asc", description="Sort order (asc or desc)"),
     db: Session = Depends(get_db),

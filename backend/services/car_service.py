@@ -1,4 +1,3 @@
-from typing import List, Optional
 import logging
 
 from sqlalchemy import desc
@@ -13,7 +12,7 @@ from models.pydantic.car import Car
 from models.pydantic.pagination import PaginationParams, SortParams, PaginatedResponse
 
 
-def get_all_cars(db: Session, currency_code: Optional[str] = Currency.USD.value) -> List[Car]:
+def get_all_cars(db: Session, currency_code: str | None = Currency.USD.value) -> list[Car]:
     cars_db = db.query(CarDB).all()
     cars = [Car.model_validate(car) for car in cars_db]
     
@@ -34,7 +33,7 @@ def get_all_cars(db: Session, currency_code: Optional[str] = Currency.USD.value)
     return cars
 
 
-def get_car_by_id(car_id: int, db: Session, currency_code: Optional[str] = Currency.USD.value) -> Car:
+def get_car_by_id(car_id: int, db: Session, currency_code: str | None = Currency.USD.value) -> Car:
     car_db = db.query(CarDB).filter(CarDB.id == car_id).first()
     
     if car_db is None:
@@ -60,10 +59,10 @@ def get_car_by_id(car_id: int, db: Session, currency_code: Optional[str] = Curre
 def get_filtered_cars(
     db: Session,
     pagination: PaginationParams,
-    name_filter: Optional[str] = None,
+    name_filter: str | None = None,
     available_only: bool = False,
     currency_code: str = Currency.USD.value,
-    sort_params: Optional[SortParams] = None
+    sort_params: SortParams | None = None
 ) -> PaginatedResponse[Car]:
     """
     Get cars with filtering, sorting, and pagination.

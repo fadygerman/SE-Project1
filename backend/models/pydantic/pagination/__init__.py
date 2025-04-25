@@ -1,4 +1,4 @@
-from typing import Generic, List, Optional, TypeVar
+from typing import Generic, TypeVar
 from pydantic import BaseModel, Field, ConfigDict
 from enum import Enum
 
@@ -19,23 +19,23 @@ class SortParams(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 class BookingFilterParams(BaseModel):
-    status: Optional[str] = None
-    car_id: Optional[int] = None
-    start_date_from: Optional[str] = None
-    start_date_to: Optional[str] = None
-    end_date_from: Optional[str] = None
-    end_date_to: Optional[str] = None
+    status: str | None = None
+    car_id: int | None = None
+    start_date_from: str | None = None
+    start_date_to: str | None = None
+    end_date_from: str | None = None
+    end_date_to: str | None = None
     
     model_config = ConfigDict(from_attributes=True)
 
 class CarFilterParams(BaseModel):
-    name: Optional[str] = None
+    name: str | None = None
     available_only: bool = False
     
     model_config = ConfigDict(from_attributes=True)
 
 class PaginatedResponse(BaseModel, Generic[T]):
-    items: List[T]
+    items: list[T]
     total: int
     page: int
     page_size: int

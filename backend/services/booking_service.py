@@ -1,6 +1,5 @@
 from datetime import date
 from decimal import Decimal
-from typing import List, Optional
 import logging
 
 from fastapi import Depends, HTTPException, status
@@ -333,9 +332,9 @@ def apply_booking_updates(booking: BookingDB, update_data: dict, db: Session):
 def get_filtered_bookings(
     db: Session,
     pagination: PaginationParams,
-    filters: Optional[BookingFilterParams] = None,
-    user_id: Optional[int] = None,
-    sort_params: Optional[SortParams] = None
+    filters: BookingFilterParams | None = None,
+    user_id: int | None = None,
+    sort_params: SortParams | None = None
 ) -> PaginatedResponse[Booking]:
     """
     Get bookings with filtering, sorting, and pagination.
