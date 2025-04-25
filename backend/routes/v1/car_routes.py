@@ -8,7 +8,7 @@ from exceptions.cars import CarNotFoundException
 from exceptions.currencies import CurrencyServiceUnavailableException, InvalidCurrencyException
 from models.currencies import Currency
 from models.pydantic.car import Car
-from models.pydantic.pagination import PaginationParams, SortParams, CarFilterParams, PaginatedResponse
+from models.pydantic.pagination import PaginationParams, SortParams, PaginatedResponse
 from services import car_service
 from services.auth_service import get_current_user
 
@@ -70,7 +70,7 @@ async def get_car(
         )
     ] = Currency.USD.value,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)  # Require authentication
+    _=Depends(get_current_user)  # Require authentication
 ):
     try:
         return car_service.get_car_by_id(car_id, db, currency_code)
