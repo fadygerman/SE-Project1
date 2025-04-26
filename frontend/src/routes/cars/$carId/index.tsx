@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import {useCarIdQuery} from "@/api/cars";
 import {useCreateBookingMutation} from "@/api/bookings";
 import { Currency } from "@/openapi/models/Currency";
+import MapComponent from '@/components/maps/MapComponent'
 
 export const Route = createFileRoute('/cars/$carId/')({
   component: RouteComponent,
@@ -24,6 +25,7 @@ function RouteComponent() {
     from?: Date
     to?: Date
   }>({})
+  const [pickupTime, setPickupTime] = useState<string>("12:00");
   const [selectedCurrency, setSelectedCurrency] = useState<string>("USD")
   const [isBooking, setIsBooking] = useState(false)
   
@@ -41,8 +43,8 @@ function RouteComponent() {
         carId: Number(carId),
         startDate: formatDateForApi(dateRange.from!),
         endDate: formatDateForApi(dateRange.to!),
-        plannedPickupTime: "12:00",
-        currencyCode: selectedCurrency as any,
+        plannedPickupTime: pickupTime,
+        currencyCode: selectedCurrency as Currency,
         })
   }
   console.log(carId)
@@ -74,32 +76,14 @@ function RouteComponent() {
       <div className="grid gap-6 md:grid-cols-2">
         <div>
           <div className="overflow-hidden justify-center items-center flex rounded-lg">
-            {/* {car.image ? (
-              <img src={car.image || "/placeholder.svg"} alt={car.name} className="h-64 w-full object-cover md:h-96" />
-            ) : (
-              <div className="flex h-64 items-center justify-center md:h-96">
-                <Car className="h-24 w-24 text-muted-foreground" />
-              </div>
-            )} */}
-            {/*<Carousel className="w-full w-2/3 ">*/}
-            {/*  <CarouselContent>*/}
-            {/*    {car?.images.map((img, index) => (*/}
-            {/*      <CarouselItem key={index}>*/}
-            {/*        <div className="p-1">*/}
-            {/*          <Card>*/}
-            {/*            <CardContent className="flex aspect-square items-center justify-center p-6">*/}
-            {/*              <img src={img} alt="" />*/}
-            {/*            </CardContent>*/}
-            {/*          </Card>*/}
-            {/*        </div>*/}
-            {/*      </CarouselItem>*/}
-            {/*    ))}*/}
-            {/*  </CarouselContent>*/}
-            {/*  <CarouselPrevious />*/}
-            {/*  <CarouselNext />*/}
-            {/*</Carousel>*/}
+            <div style={{ maxHeight: "400px"}}>
+            <img
+              src={`/assets/car_images/car-${carDetail.id}.jpg`}
+              alt={carDetail.name}
+              className="h-full w-auto object-contain"
+            />
             </div>
-
+          </div>
             <div className="mt-6">
               <h2 className="text-2xl font-bold">Car Details</h2>
               <Separator className="my-4" />
@@ -209,6 +193,28 @@ function RouteComponent() {
                       </PopoverContent>
                     </Popover>
                   </div>
+
+                  <div className="grid gap-2">
+                    <label className="text-sm font-medium">Pickup Time</label>
+                    <Select 
+                      defaultValue="12:00" 
+                      onValueChange={(value) => setPickupTime(value)}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select pickup time" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 13 }, (_, i) => 8 + i).map(hour => {
+                          const formattedHour = hour.toString().padStart(2, '0');
+                          return (
+                            <SelectItem key={hour} value={`${formattedHour}:00`}>
+                              {formattedHour}:00
+                            </SelectItem>
+                          )
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -224,9 +230,11 @@ function RouteComponent() {
           </Card>
 
           <div className="mt-6">
-            <h2 className="text-2xl font-bold">Description</h2>
+            <h2 className="text-2xl font-bold">Location</h2>
             <Separator className="my-4" />
-            {/* <p className="text-muted-foreground">{car.description || "No description available for this vehicle."}</p> */}
+            {carDetail.latitude != null && carDetail.longitude != null && (
+              <div style={{width:"100%"}}><MapComponent center={{ lat: carDetail.latitude, lng: carDetail.longitude }}></MapComponent></div>
+            )}
           </div>
         </div>
       </div>

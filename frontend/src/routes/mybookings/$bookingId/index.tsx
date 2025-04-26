@@ -43,8 +43,8 @@ function RouteComponent() {
                             </div>
                             <div>
                                 <dt className="text-sm font-medium text-muted-foreground">Car ID</dt>
-                                <Link to={"/cars/$carId"} params={{ carId: booking.carId }} >
-                                    <dd className="text-lg">{booking.car.name}</dd>
+                                <Link to={"/cars/$carId"} params={{ carId: booking.carId.toString() }} >
+                                    <dd className="text-lg">{booking.car ? booking.car.name : "N/A"}</dd>
                                 </Link>
                             </div>
                             <div>
@@ -58,13 +58,13 @@ function RouteComponent() {
                             {booking.pickupDate && (
                                 <div>
                                     <dt className="text-sm font-medium text-muted-foreground">Pickup Date</dt>
-                                    <dd className="text-lg">{booking.pickupDate}</dd>
+                                    <dd className="text-lg">{new Date(booking.pickupDate).toLocaleString()}</dd>
                                 </div>
                             )}
                             {booking.returnDate && (
                                 <div>
                                     <dt className="text-sm font-medium text-muted-foreground">Return Date</dt>
-                                    <dd className="text-lg">{booking.returnDate}</dd>
+                                    <dd className="text-lg">{new Date(booking.returnDate).toLocaleString()}</dd>
                                 </div>
                             )}
                             <div>

@@ -26,6 +26,7 @@ a:hover {
   color: #535bf2;
 }
 
+
 body {
   margin: 0;
   display: flex;
@@ -233,4 +234,15 @@ button:focus-visible {
 .edit-form-wrapper.open {
   max-height: 600px; /* adjust based on actual form height */
   opacity: 1;
+}
+
+
+
+/* automatically set, dont know how to change, so reset here --> normally: 100vh, but height doesnt fit then to the website */
+.w-screen {
+  width:100%;
+}
+
+.h-screen{
+  height:100%;
 }

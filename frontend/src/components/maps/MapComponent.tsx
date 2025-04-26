@@ -16,7 +16,7 @@ const divStyle = {
 };
 
 const containerStyle = {
-  width: '60%',
+  width: '100%',
   height: '400px',
   borderRadius: '10px',
 };
