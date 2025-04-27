@@ -49,9 +49,3 @@ class DateOutsideBookingPeriodException(Exception):
 class BookingStartDateException(Exception):
   def __init__(self):
     self.message = "Booking start date must be in the future, not today or in the past"
-
-class InvalidDateFormatException(Exception):
-    def __init__(self, field_name: str):
-        self.field_name = field_name
-        self.message = f"Invalid date format for '{field_name}'. Expected format: YYYY-MM-DD."
-        super().__init__(self.message)

@@ -1,4 +1,5 @@
 from decimal import Decimal
+from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
@@ -8,8 +9,8 @@ class Car(BaseModel):
     model: str = Field(description="Car model")
     price_per_day: Decimal = Field(description="Daily rental price", gt=0)
     is_available: bool = Field(description="Whether the car is available for booking")
-    latitude: float | None = Field(None, description="Car's current latitude location")
-    longitude: float | None = Field(None, description="Car's current longitude location")
+    latitude: Optional[float] = Field(None, description="Car's current latitude location")
+    longitude: Optional[float] = Field(None, description="Car's current longitude location")
     
     model_config = ConfigDict(from_attributes=True)
     

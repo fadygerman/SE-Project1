@@ -42,9 +42,7 @@ async def get_current_user(
                 raise UserNotRegisteredException()
             
             # Extract user details from token
-            given_name = payload.get('name', '')
-            if not given_name and payload.get('given_name'):
-                given_name = payload.get('given_name')
+            given_name = payload.get('given_name', '')
             family_name = payload.get('family_name', '')
             phone = payload.get('phone_number', '')
             

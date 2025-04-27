@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from typing import List
 
 from database import get_db
 from models.db_models import User as UserModel, UserRole
@@ -12,7 +13,7 @@ router = APIRouter(
 )
 
 # Get all users endpoint - restricted to admin role
-@router.get("/", response_model=list[User])
+@router.get("/", response_model=List[User])
 async def get_users(
     db: Session = Depends(get_db),
     _=Depends(require_role([UserRole.ADMIN]))  # Only admins can list all users

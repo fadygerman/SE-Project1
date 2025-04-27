@@ -31,7 +31,7 @@ def postgres_container():
     
     postgres = PostgresContainer(
         "postgres:16-alpine",
-        username=postgres_user,
+        user=postgres_user,
         password=postgres_password,
         dbname=postgres_db
     )

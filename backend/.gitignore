@@ -180,6 +180,3 @@ cython_debug/
 
 # Database
 *.db
-
-# act
-.act/secrets

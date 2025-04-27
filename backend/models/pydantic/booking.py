@@ -1,6 +1,7 @@
 from datetime import date, time, timedelta
 from decimal import Decimal
 from enum import Enum
+from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -23,16 +24,16 @@ class Booking(BaseModel):
     start_date: date = Field(description="Start date of the booking period")
     end_date: date = Field(description="End date of the booking period")
     planned_pickup_time: time = Field(description="Time when the car will be picked up on start_date (UTC time)")
-    pickup_date: date | None = Field(None, description="Actual date when car was picked up")
-    return_date: date | None = Field(None, description="Actual date when car was returned")
+    pickup_date: Optional[date] = Field(None, description="Actual date when car was picked up")
+    return_date: Optional[date] = Field(None, description="Actual date when car was returned")
     total_cost: Decimal = Field(description="Total cost of the booking", gt=0)
     currency_code: Currency = Field(description="Currency code of the booking")
     exchange_rate: Decimal = Field(description="Exchange rate of the booking")
     status: BookingStatus = Field(description="Current status of the booking")
     
-    # Optional nested objects for full data retrieval using Union Syntax (|)
-    user: User | None = Field(None, description="User information")
-    car: Car | None = Field(None, description="Car information")
+    # Optional nested objects for full data retrieval
+    user: Optional[User] = Field(None, description="User information")
+    car: Optional[Car] = Field(None, description="Car information")
     
     model_config = ConfigDict(from_attributes=True)
     
@@ -85,11 +86,11 @@ class BookingCreate(BaseModel):
         return end_date
     
 class BookingUpdate(BaseModel):
-    start_date: date | None = Field(None, description="Updated start date")
-    end_date: date | None = Field(None, description="Updated end date") 
-    status: BookingStatus | None = Field(None, description="Updated booking status")
-    pickup_date: date | None = Field(None, description="Actual date when car was picked up")
-    return_date: date | None = Field(None, description="Actual date when car was returned")
+    start_date: Optional[date] = Field(None, description="Updated start date")
+    end_date: Optional[date] = Field(None, description="Updated end date") 
+    status: Optional[BookingStatus] = Field(None, description="Updated booking status")
+    pickup_date: Optional[date] = Field(None, description="Actual date when car was picked up")
+    return_date: Optional[date] = Field(None, description="Actual date when car was returned")
     
     model_config = ConfigDict(from_attributes=True)
     

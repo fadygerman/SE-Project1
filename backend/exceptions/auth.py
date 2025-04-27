@@ -1,7 +1,7 @@
 class InvalidTokenException(Exception):
     """Exception raised when token validation fails"""
-    def __init__(self, message="Invalid or expired token"):
-        self.message = message
+    def __init__(self):
+        self.message = "Invalid or expired token"
         super().__init__(self.message)
 
 class MissingUserIdentifierException(Exception):
@@ -45,6 +45,4 @@ class ForbiddenException(Exception):
 
 class ConfigurationError(Exception):
     """Exception raised for errors in application configuration."""
-    def __init__(self, message="Configuration error"):
-        self.message = message
-        super().__init__(self.message)
+    pass
