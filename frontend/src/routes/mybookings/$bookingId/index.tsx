@@ -75,7 +75,7 @@ function RouteComponent() {
                             </div>
                             <div>
                                 <dt className="text-sm font-medium text-muted-foreground">Total Cost</dt>
-                                <dd className="text-lg">${booking.totalCost}</dd>
+                                <dd className="text-lg">{booking.totalCost} {booking.currencyCode}</dd>
                             </div>
                             <div>
                                 <dt className="text-sm font-medium text-muted-foreground">Status</dt>
