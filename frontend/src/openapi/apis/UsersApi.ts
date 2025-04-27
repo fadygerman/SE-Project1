@@ -30,9 +30,62 @@ export interface GetUserApiV1UsersUserIdGetRequest {
 }
 
 /**
+ * UsersApi - interface
+ * 
+ * @export
+ * @interface UsersApiInterface
+ */
+export interface UsersApiInterface {
+    /**
+     * Get the profile of the currently authenticated user
+     * @summary Get My Profile
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof UsersApiInterface
+     */
+    getMyProfileApiV1UsersMeProfileGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<User>>;
+
+    /**
+     * Get the profile of the currently authenticated user
+     * Get My Profile
+     */
+    getMyProfileApiV1UsersMeProfileGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<User>;
+
+    /**
+     * 
+     * @summary Get User
+     * @param {number} userId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof UsersApiInterface
+     */
+    getUserApiV1UsersUserIdGetRaw(requestParameters: GetUserApiV1UsersUserIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<User>>;
+
+    /**
+     * Get User
+     */
+    getUserApiV1UsersUserIdGet(requestParameters: GetUserApiV1UsersUserIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<User>;
+
+    /**
+     * 
+     * @summary Get Users
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof UsersApiInterface
+     */
+    getUsersApiV1UsersGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<User>>>;
+
+    /**
+     * Get Users
+     */
+    getUsersApiV1UsersGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<User>>;
+
+}
+
+/**
  * 
  */
-export class UsersApi extends runtime.BaseAPI {
+export class UsersApi extends runtime.BaseAPI implements UsersApiInterface {
 
     /**
      * Get the profile of the currently authenticated user

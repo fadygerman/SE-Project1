@@ -19,6 +19,7 @@ import type {
   BookingCreate,
   BookingUpdate,
   HTTPValidationError,
+  PaginatedResponseBooking,
 } from '../models/index';
 import {
     BookingFromJSON,
@@ -29,6 +30,8 @@ import {
     BookingUpdateToJSON,
     HTTPValidationErrorFromJSON,
     HTTPValidationErrorToJSON,
+    PaginatedResponseBookingFromJSON,
+    PaginatedResponseBookingToJSON,
 } from '../models/index';
 
 export interface CreateBookingApiV1BookingsPostRequest {
@@ -39,15 +42,148 @@ export interface GetBookingApiV1BookingsBookingIdGetRequest {
     bookingId: number;
 }
 
+export interface GetBookingsApiV1BookingsGetRequest {
+    page?: number;
+    pageSize?: number;
+    status?: string | null;
+    carId?: number | null;
+    startDateFrom?: string | null;
+    startDateTo?: string | null;
+    endDateFrom?: string | null;
+    endDateTo?: string | null;
+    sortBy?: string;
+    sortOrder?: string;
+}
+
+export interface GetMyBookingsApiV1BookingsMyGetRequest {
+    page?: number;
+    pageSize?: number;
+    status?: string | null;
+    carId?: number | null;
+    startDateFrom?: string | null;
+    startDateTo?: string | null;
+    endDateFrom?: string | null;
+    endDateTo?: string | null;
+    sortBy?: string;
+    sortOrder?: string;
+}
+
 export interface UpdateBookingApiV1BookingsBookingIdPutRequest {
     bookingId: number;
     bookingUpdate: BookingUpdate;
 }
 
 /**
+ * BookingsApi - interface
+ * 
+ * @export
+ * @interface BookingsApiInterface
+ */
+export interface BookingsApiInterface {
+    /**
+     * 
+     * @summary Create Booking
+     * @param {BookingCreate} bookingCreate 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof BookingsApiInterface
+     */
+    createBookingApiV1BookingsPostRaw(requestParameters: CreateBookingApiV1BookingsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Booking>>;
+
+    /**
+     * Create Booking
+     */
+    createBookingApiV1BookingsPost(requestParameters: CreateBookingApiV1BookingsPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Booking>;
+
+    /**
+     * Get booking by ID. Users can only access their own bookings unless they are admins.
+     * @summary Get Booking
+     * @param {number} bookingId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof BookingsApiInterface
+     */
+    getBookingApiV1BookingsBookingIdGetRaw(requestParameters: GetBookingApiV1BookingsBookingIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Booking>>;
+
+    /**
+     * Get booking by ID. Users can only access their own bookings unless they are admins.
+     * Get Booking
+     */
+    getBookingApiV1BookingsBookingIdGet(requestParameters: GetBookingApiV1BookingsBookingIdGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Booking>;
+
+    /**
+     * Get all bookings with filtering, sorting and pagination. Admin only endpoint.
+     * @summary Get Bookings
+     * @param {number} [page] Page number
+     * @param {number} [pageSize] Number of items per page
+     * @param {string} [status] Filter by booking status
+     * @param {number} [carId] Filter by car ID
+     * @param {string} [startDateFrom] Filter bookings with start date from
+     * @param {string} [startDateTo] Filter bookings with start date to
+     * @param {string} [endDateFrom] Filter bookings with end date from
+     * @param {string} [endDateTo] Filter bookings with end date to
+     * @param {string} [sortBy] Field to sort by
+     * @param {string} [sortOrder] Sort order (asc or desc)
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof BookingsApiInterface
+     */
+    getBookingsApiV1BookingsGetRaw(requestParameters: GetBookingsApiV1BookingsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PaginatedResponseBooking>>;
+
+    /**
+     * Get all bookings with filtering, sorting and pagination. Admin only endpoint.
+     * Get Bookings
+     */
+    getBookingsApiV1BookingsGet(requestParameters: GetBookingsApiV1BookingsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PaginatedResponseBooking>;
+
+    /**
+     * Get all bookings for the currently authenticated user with filtering, sorting and pagination
+     * @summary Get My Bookings
+     * @param {number} [page] Page number
+     * @param {number} [pageSize] Number of items per page
+     * @param {string} [status] Filter by booking status
+     * @param {number} [carId] Filter by car ID
+     * @param {string} [startDateFrom] Filter bookings with start date from
+     * @param {string} [startDateTo] Filter bookings with start date to
+     * @param {string} [endDateFrom] Filter bookings with end date from
+     * @param {string} [endDateTo] Filter bookings with end date to
+     * @param {string} [sortBy] Field to sort by
+     * @param {string} [sortOrder] Sort order (asc or desc)
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof BookingsApiInterface
+     */
+    getMyBookingsApiV1BookingsMyGetRaw(requestParameters: GetMyBookingsApiV1BookingsMyGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PaginatedResponseBooking>>;
+
+    /**
+     * Get all bookings for the currently authenticated user with filtering, sorting and pagination
+     * Get My Bookings
+     */
+    getMyBookingsApiV1BookingsMyGet(requestParameters: GetMyBookingsApiV1BookingsMyGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PaginatedResponseBooking>;
+
+    /**
+     * Update a booking. Users can only update their own bookings unless they are admins.
+     * @summary Update Booking
+     * @param {number} bookingId 
+     * @param {BookingUpdate} bookingUpdate 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof BookingsApiInterface
+     */
+    updateBookingApiV1BookingsBookingIdPutRaw(requestParameters: UpdateBookingApiV1BookingsBookingIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Booking>>;
+
+    /**
+     * Update a booking. Users can only update their own bookings unless they are admins.
+     * Update Booking
+     */
+    updateBookingApiV1BookingsBookingIdPut(requestParameters: UpdateBookingApiV1BookingsBookingIdPutRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Booking>;
+
+}
+
+/**
  * 
  */
-export class BookingsApi extends runtime.BaseAPI {
+export class BookingsApi extends runtime.BaseAPI implements BookingsApiInterface {
 
     /**
      * Create Booking
@@ -137,10 +273,51 @@ export class BookingsApi extends runtime.BaseAPI {
     }
 
     /**
+     * Get all bookings with filtering, sorting and pagination. Admin only endpoint.
      * Get Bookings
      */
-    async getBookingsApiV1BookingsGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Booking>>> {
+    async getBookingsApiV1BookingsGetRaw(requestParameters: GetBookingsApiV1BookingsGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PaginatedResponseBooking>> {
         const queryParameters: any = {};
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['pageSize'] != null) {
+            queryParameters['page_size'] = requestParameters['pageSize'];
+        }
+
+        if (requestParameters['status'] != null) {
+            queryParameters['status'] = requestParameters['status'];
+        }
+
+        if (requestParameters['carId'] != null) {
+            queryParameters['car_id'] = requestParameters['carId'];
+        }
+
+        if (requestParameters['startDateFrom'] != null) {
+            queryParameters['start_date_from'] = requestParameters['startDateFrom'];
+        }
+
+        if (requestParameters['startDateTo'] != null) {
+            queryParameters['start_date_to'] = requestParameters['startDateTo'];
+        }
+
+        if (requestParameters['endDateFrom'] != null) {
+            queryParameters['end_date_from'] = requestParameters['endDateFrom'];
+        }
+
+        if (requestParameters['endDateTo'] != null) {
+            queryParameters['end_date_to'] = requestParameters['endDateTo'];
+        }
+
+        if (requestParameters['sortBy'] != null) {
+            queryParameters['sort_by'] = requestParameters['sortBy'];
+        }
+
+        if (requestParameters['sortOrder'] != null) {
+            queryParameters['sort_order'] = requestParameters['sortOrder'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
@@ -159,23 +336,64 @@ export class BookingsApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(BookingFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PaginatedResponseBookingFromJSON(jsonValue));
     }
 
     /**
+     * Get all bookings with filtering, sorting and pagination. Admin only endpoint.
      * Get Bookings
      */
-    async getBookingsApiV1BookingsGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Booking>> {
-        const response = await this.getBookingsApiV1BookingsGetRaw(initOverrides);
+    async getBookingsApiV1BookingsGet(requestParameters: GetBookingsApiV1BookingsGetRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PaginatedResponseBooking> {
+        const response = await this.getBookingsApiV1BookingsGetRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
     /**
-     * Get all bookings for the currently authenticated user
+     * Get all bookings for the currently authenticated user with filtering, sorting and pagination
      * Get My Bookings
      */
-    async getMyBookingsApiV1BookingsMyGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Booking>>> {
+    async getMyBookingsApiV1BookingsMyGetRaw(requestParameters: GetMyBookingsApiV1BookingsMyGetRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PaginatedResponseBooking>> {
         const queryParameters: any = {};
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['pageSize'] != null) {
+            queryParameters['page_size'] = requestParameters['pageSize'];
+        }
+
+        if (requestParameters['status'] != null) {
+            queryParameters['status'] = requestParameters['status'];
+        }
+
+        if (requestParameters['carId'] != null) {
+            queryParameters['car_id'] = requestParameters['carId'];
+        }
+
+        if (requestParameters['startDateFrom'] != null) {
+            queryParameters['start_date_from'] = requestParameters['startDateFrom'];
+        }
+
+        if (requestParameters['startDateTo'] != null) {
+            queryParameters['start_date_to'] = requestParameters['startDateTo'];
+        }
+
+        if (requestParameters['endDateFrom'] != null) {
+            queryParameters['end_date_from'] = requestParameters['endDateFrom'];
+        }
+
+        if (requestParameters['endDateTo'] != null) {
+            queryParameters['end_date_to'] = requestParameters['endDateTo'];
+        }
+
+        if (requestParameters['sortBy'] != null) {
+            queryParameters['sort_by'] = requestParameters['sortBy'];
+        }
+
+        if (requestParameters['sortOrder'] != null) {
+            queryParameters['sort_order'] = requestParameters['sortOrder'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
@@ -194,15 +412,15 @@ export class BookingsApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(BookingFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PaginatedResponseBookingFromJSON(jsonValue));
     }
 
     /**
-     * Get all bookings for the currently authenticated user
+     * Get all bookings for the currently authenticated user with filtering, sorting and pagination
      * Get My Bookings
      */
-    async getMyBookingsApiV1BookingsMyGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Booking>> {
-        const response = await this.getMyBookingsApiV1BookingsMyGetRaw(initOverrides);
+    async getMyBookingsApiV1BookingsMyGet(requestParameters: GetMyBookingsApiV1BookingsMyGetRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PaginatedResponseBooking> {
+        const response = await this.getMyBookingsApiV1BookingsMyGetRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

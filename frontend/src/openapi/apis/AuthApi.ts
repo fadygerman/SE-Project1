@@ -30,9 +30,64 @@ export interface RegisterCognitoUserApiV1AuthRegisterCognitoUserPostRequest {
 }
 
 /**
+ * AuthApi - interface
+ * 
+ * @export
+ * @interface AuthApiInterface
+ */
+export interface AuthApiInterface {
+    /**
+     * Protected endpoint that requires authentication
+     * @summary Protected Endpoint
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AuthApiInterface
+     */
+    protectedEndpointApiV1AuthProtectedGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>>;
+
+    /**
+     * Protected endpoint that requires authentication
+     * Protected Endpoint
+     */
+    protectedEndpointApiV1AuthProtectedGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any>;
+
+    /**
+     * Public endpoint that doesn\'t require authentication
+     * @summary Public Endpoint
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AuthApiInterface
+     */
+    publicEndpointApiV1AuthPublicGetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>>;
+
+    /**
+     * Public endpoint that doesn\'t require authentication
+     * Public Endpoint
+     */
+    publicEndpointApiV1AuthPublicGet(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any>;
+
+    /**
+     * Create a user record after successful Cognito registration. This endpoint is called by the frontend after a successful Cognito signup.
+     * @summary Register Cognito User
+     * @param {UserRegister} userRegister 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AuthApiInterface
+     */
+    registerCognitoUserApiV1AuthRegisterCognitoUserPostRaw(requestParameters: RegisterCognitoUserApiV1AuthRegisterCognitoUserPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>>;
+
+    /**
+     * Create a user record after successful Cognito registration. This endpoint is called by the frontend after a successful Cognito signup.
+     * Register Cognito User
+     */
+    registerCognitoUserApiV1AuthRegisterCognitoUserPost(requestParameters: RegisterCognitoUserApiV1AuthRegisterCognitoUserPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any>;
+
+}
+
+/**
  * 
  */
-export class AuthApi extends runtime.BaseAPI {
+export class AuthApi extends runtime.BaseAPI implements AuthApiInterface {
 
     /**
      * Protected endpoint that requires authentication
@@ -107,7 +162,7 @@ export class AuthApi extends runtime.BaseAPI {
     }
 
     /**
-     * Create a user record after successful Cognito registration. This endpoint is called by the frontend after a successful Cognito signup. 
+     * Create a user record after successful Cognito registration. This endpoint is called by the frontend after a successful Cognito signup.
      * Register Cognito User
      */
     async registerCognitoUserApiV1AuthRegisterCognitoUserPostRaw(requestParameters: RegisterCognitoUserApiV1AuthRegisterCognitoUserPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
@@ -148,7 +203,7 @@ export class AuthApi extends runtime.BaseAPI {
     }
 
     /**
-     * Create a user record after successful Cognito registration. This endpoint is called by the frontend after a successful Cognito signup. 
+     * Create a user record after successful Cognito registration. This endpoint is called by the frontend after a successful Cognito signup.
      * Register Cognito User
      */
     async registerCognitoUserApiV1AuthRegisterCognitoUserPost(requestParameters: RegisterCognitoUserApiV1AuthRegisterCognitoUserPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {

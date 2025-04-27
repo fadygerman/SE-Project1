@@ -12,6 +12,8 @@ models/BookingUpdate.ts
 models/Car.ts
 models/Currency.ts
 models/HTTPValidationError.ts
+models/PaginatedResponseBooking.ts
+models/PaginatedResponseCar.ts
 models/User.ts
 models/UserRegister.ts
 models/UserRole.ts
