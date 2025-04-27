@@ -11,7 +11,9 @@ export const Route = createFileRoute('/mybookings/$bookingId/')({
 function RouteComponent() {
     const { bookingId } = Route.useParams();
     const { data: booking, error, isLoading } = useBookingIdQuery(Number(bookingId));
-    console.log(booking); // For debugging
+    const formatDate = (date: Date) => {
+        return date.toISOString().split('T')[0]; // formats to 'YYYY-MM-DD'
+      };
 
     if (isLoading) {
         return <div>Loading booking details...</div>;
@@ -45,16 +47,16 @@ function RouteComponent() {
                       
                             <div>
                             <dt className="text-sm font-medium text-muted-foreground">Start Date</dt>
-                                <dd className="text-lg">{new Date(booking.startDate).toLocaleString()}</dd>
+                                <dd className="text-lg">{formatDate(booking.startDate)}</dd>
                             </div>
                             <div>
                                 <dt className="text-sm font-medium text-muted-foreground">End Date</dt>
-                                <dd className="text-lg">{new Date(booking.endDate).toLocaleString()}</dd>
+                                <dd className="text-lg">{formatDate(booking.endDate)}</dd>
                             </div>
                             {booking.pickupDate && (
                                 <div>
                                     <dt className="text-sm font-medium text-muted-foreground">Pickup Date</dt>
-                                    <dd className="text-lg">{new Date(booking.pickupDate).toLocaleString()}</dd>
+                                    <dd className="text-lg">{formatDate(booking.pickupDate).toLocaleString()}</dd>
                                 </div>
                             )}
                             {booking.returnDate && (
