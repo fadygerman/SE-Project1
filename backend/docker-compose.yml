@@ -34,5 +34,37 @@ services:
         condition: service_healthy
     restart: on-failure
 
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: car_rental_api
+    ports:
+      - "${API_PORT:-8000}:8000"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME:-car_rental}
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      
+      - COGNITO_REGION=${COGNITO_REGION:-eu-north-1}
+      - COGNITO_USER_POOL_ID=${COGNITO_USER_POOL_ID}
+      - COGNITO_CLIENT_ID=${COGNITO_CLIENT_ID}
+      
+      - AUTH0_CURRENCY_CONVERTER_CLIENT_ID=${AUTH0_CURRENCY_CONVERTER_CLIENT_ID}
+      - AUTH0_CURRENCY_CONVERTER_CLIENT_SECRET=${AUTH0_CURRENCY_CONVERTER_CLIENT_SECRET}
+      - CURRENCY_CONVERTER_HOST=${CURRENCY_CONVERTER_HOST}
+
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5173}
+  
+      - DEVELOPMENT_MODE=${DEVELOPMENT_MODE:-False}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
 volumes:
   postgres_data: 

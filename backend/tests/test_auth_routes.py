@@ -138,7 +138,7 @@ class TestAuthEdgeCases:
         mock_verify_jwt.return_value = {
             "sub": cognito_id,
             "email": "minimal@example.com",
-            "given_name": "User",  # Minimal valid first name
+            "name": "User",  # Minimal valid first name
             "family_name": "Profile",  # Minimal valid last name
             "phone_number": "+1234567890"  # Valid phone number
         }

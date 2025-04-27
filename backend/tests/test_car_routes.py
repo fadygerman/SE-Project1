@@ -17,8 +17,17 @@ class TestCarRetrieval:
         # Check status code
         assert response.status_code == status.HTTP_200_OK
         
-        # Check response data
-        cars = response.json()
+        # Check response data - now with pagination
+        response_data = response.json()
+        
+        # Verify pagination structure
+        assert "items" in response_data
+        assert "page" in response_data
+        assert "page_size" in response_data
+        assert "total" in response_data
+        
+        # Check items
+        cars = response_data["items"]
         assert len(cars) == 2
         assert cars[0]["name"] == "TestCar1"
         assert cars[1]["name"] == "TestCar2"
@@ -37,7 +46,17 @@ class TestCarRetrieval:
         
         assert response.status_code == status.HTTP_200_OK
         
-        cars = response.json()
+        # Check paginated response format
+        response_data = response.json()
+        
+        # Verify pagination structure
+        assert "items" in response_data
+        assert "page" in response_data
+        assert "page_size" in response_data
+        assert "total" in response_data
+        
+        # Check the car items
+        cars = response_data["items"]
         assert len(cars) == 2
         
         assert cars[0]["price_per_day"] == "50.00"
@@ -55,7 +74,17 @@ class TestCarRetrieval:
         response = auth_client.get("/api/v1/cars/?currency_code=EUR")
         assert response.status_code == status.HTTP_200_OK
         
-        cars = response.json()
+        # Get paginated response
+        response_data = response.json()
+        
+        # Verify pagination structure
+        assert "items" in response_data
+        assert "page" in response_data
+        assert "page_size" in response_data
+        assert "total" in response_data
+        
+        # Check the cars
+        cars = response_data["items"]
         assert len(cars) == 2
         
         # Prices should be doubled as per our mock
