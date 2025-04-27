@@ -4,7 +4,6 @@ dotenv.load_dotenv()
 
 from fastapi import FastAPI
 from routes.v1 import car_routes, user_routes, booking_routes, auth_routes
-from routes.v1 import car_routes, user_routes, booking_routes
 from fastapi.middleware.cors import CORSMiddleware
 
 
