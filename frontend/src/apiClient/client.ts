@@ -31,9 +31,8 @@ async function makeConfig(useIdToken = false): Promise<Configuration> {
 async function registerCurrentUser(): Promise<void> {
     const session = await fetchAuthSession();
     const claims = session.tokens?.idToken?.payload as any;
-
     const payload: UserRegister = {
-        firstName: claims.given_name ?? 'Unknown',
+        firstName: claims.name ?? 'Unknown',
         lastName: claims.family_name ?? 'User',
         email: claims.email ?? `no-email-${claims.sub}@example.com`,
         phoneNumber: (claims.phone_number ?? '0000000000').replace(/\s+/g, ''),
