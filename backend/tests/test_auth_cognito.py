@@ -381,6 +381,7 @@ class TestAdvancedAuthScenarios:
         assert all(isinstance(r, User) or r is None for r in results), f"Unexpected results found: {results}"
 
 
+    @patch('services.cognito_service.jwt.get_unverified_header')  
     @patch('services.cognito_service.jwt.decode')
     @patch('services.cognito_service.PyJWKClient')
     def test_verify_cognito_jwt_invalid(self, mock_jwk_client, mock_jwt_decode, test_db):
