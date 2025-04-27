@@ -124,13 +124,13 @@ function RouteComponent() {
                                 <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                     <div>
                                         <dt className="text-sm font-medium text-muted-foreground">Name</dt>
-                                        <Link to={"/cars/$carId"} params={{ carId: booking.carId.toString() }} >
-                                            <dd className="text-lg">{booking.car?.name}</dd>
-                                        </Link>
+                                        <dd className="text-lg">{booking.car?.name}</dd>
                                     </div>
                                     <div>
-                                        <dt className="text-sm font-medium text-muted-foreground">Model</dt>
-                                        <dd className="text-lg">{booking.car?.name}</dd>
+                                        <Link to={"/cars/$carId"} params={{ carId: booking.carId.toString() }} >
+                                            <dt className="text-sm font-medium text-muted-foreground">Model</dt>
+                                            <dd className="text-lg">{booking.car?.model}</dd>
+                                        </Link>
                                     </div>
                                     <div>
                                     <dt className="text-sm font-medium text-muted-foreground">Price Per Day</dt>
