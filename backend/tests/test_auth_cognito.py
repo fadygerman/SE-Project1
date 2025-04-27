@@ -30,7 +30,7 @@ class TestAdvancedAuthScenarios:
         mock_verify_jwt.return_value = {
             "sub": "test-cognito-id",
             "email": "test@example.com",
-            "given_name": "Test", 
+            "name": "Test", 
             "family_name": "User",
             "phone_number": "+1234567890"
         }
@@ -66,7 +66,7 @@ class TestAdvancedAuthScenarios:
         mock_verify_jwt.return_value = {
             "sub": "new-user-id",
             "email": "new@example.com",
-            "given_name": "New", 
+            "name": "New", 
             "family_name": "User",
             "phone_number": "+1234567890"
         }
@@ -126,7 +126,7 @@ class TestAdvancedAuthScenarios:
         mock_verify_jwt.return_value = {
             "sub": "minimal-user",
             "email": "minimal@example.com",
-            "given_name": "A",  # Minimum length is 1
+            "name": "A",  # Minimum length is 1
             "family_name": "B",  # Minimum length is 1
             "phone_number": "12345678"  # Minimum length is 8
         }
@@ -257,7 +257,7 @@ class TestAdvancedAuthScenarios:
             return {
                 "sub": "test-user",
                 "email": "test@example.com",
-                "given_name": "Test",
+                "name": "Test",
                 "family_name": "User",
                 "phone_number": "+1234567890"
             }
@@ -318,7 +318,7 @@ class TestAdvancedAuthScenarios:
         success_mock.return_value = {
             "sub": "test-user",
             "email": "test@example.com",
-            "given_name": "Test",
+            "name": "Test",
             "family_name": "User",
             "phone_number": "+1234567890"
         }
@@ -381,6 +381,7 @@ class TestAdvancedAuthScenarios:
         assert all(isinstance(r, User) or r is None for r in results), f"Unexpected results found: {results}"
 
 
+    @patch('services.cognito_service.jwt.get_unverified_header')  
     @patch('services.cognito_service.jwt.decode')
     @patch('services.cognito_service.PyJWKClient')
     def test_verify_cognito_jwt_invalid(self, mock_jwk_client, mock_jwt_decode, test_db):
@@ -432,7 +433,7 @@ class TestAdvancedAuthScenarios:
         mock_verify_jwt.return_value = {
             "sub": "new-cognito-id",
             "email": "new.user@example.com",
-            "given_name": "New",
+            "name": "New",
             "family_name": "User",
             "phone_number": "+1234567890"
         }
@@ -493,7 +494,7 @@ class TestAdvancedAuthScenarios:
         mock_verify_jwt.return_value = {
             # No 'sub' field
             'email': 'user@example.com',
-            'given_name': 'Test',
+            'name': 'Test',
             'family_name': 'User',
             'phone_number': '+1234567890'
         }
@@ -522,7 +523,7 @@ class TestAdvancedAuthScenarios:
         mock_verify_jwt.return_value = {
             'sub': 'new-cognito-id',
             'email': 'user@example.com',
-            'given_name': 'Test',
+            'name': 'Test',
             'phone_number': '+1234567890'
         }
         with pytest.raises(Exception) as exc_info:
@@ -533,7 +534,7 @@ class TestAdvancedAuthScenarios:
         mock_verify_jwt.return_value = {
             'sub': 'new-cognito-id',
             'email': 'user@example.com',
-            'given_name': 'Test',
+            'name': 'Test',
             'family_name': 'User'
         }
         with pytest.raises(Exception) as exc_info:
@@ -626,7 +627,7 @@ class TestAdvancedAuthScenarios:
         """Test that a Cognito JWT missing the 'sub' claim raises the correct exception."""
         mock_verify_jwt.return_value = {
             'email': 'user@example.com',
-            'given_name': 'Test',
+            'name': 'Test',
             'family_name': 'User',
             'phone_number': '+1234567890'
         }

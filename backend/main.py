@@ -1,11 +1,14 @@
+import os
+from pathlib import Path
+
 import dotenv
 
 dotenv.load_dotenv()
 
 from fastapi import FastAPI
-from routes.v1 import car_routes, user_routes, booking_routes, auth_routes
 from fastapi.middleware.cors import CORSMiddleware
 
+from routes.v1 import auth_routes, booking_routes, car_routes, user_routes
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -14,29 +17,24 @@ app = FastAPI(
     version="0.1.0"
 )
 
-origins = [
-    "http://localhost:5173",
-]
+# Get frontend URL from environment variable with a default fallback
+frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
+# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,            # or ["*"] to allow all
+    allow_origins=[frontend_url],
     allow_credentials=True,
-    allow_methods=["*"],              # or restrict to ["GET", "POST", ...]
-    allow_headers=["*"],              # or restrict to specific headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
-
-# Root endpoint
-@app.get("/")
-async def root():
-    return {"message": "Welcome to Car Rental API"}
 
 # Health check endpoint
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
 
-# Include versioned routers
+# Include versioned routers for API endpoints
 app.include_router(car_routes.router, prefix="/api/v1")
 app.include_router(user_routes.router, prefix="/api/v1")
 app.include_router(booking_routes.router, prefix="/api/v1")

@@ -1,4 +1,4 @@
-from typing import Annotated, List, Optional
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
@@ -8,6 +8,7 @@ from exceptions.cars import CarNotFoundException
 from exceptions.currencies import CurrencyServiceUnavailableException, InvalidCurrencyException
 from models.currencies import Currency
 from models.pydantic.car import Car
+from models.pydantic.pagination import PaginationParams, SortParams, PaginatedResponse
 from services import car_service
 from services.auth_service import get_current_user
 
@@ -16,9 +17,15 @@ router = APIRouter(
     tags=["cars"]
 )
 
-# Get all cars endpoint
-@router.get("/", response_model=List[Car])
+# Get all cars endpoint with pagination, filtering and sorting
+@router.get("/", response_model=PaginatedResponse[Car])
 async def get_cars(
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(10, ge=1, le=100, description="Number of items per page"),
+    name: str | None = Query(None, description="Filter by car name or model"),
+    available_only: bool = Query(False, description="Show only available cars"),
+    sort_by: str = Query("id", description="Field to sort by"),
+    sort_order: str = Query("asc", description="Sort order (asc or desc)"),
     currency_code: Annotated[
         str, 
         Query(
@@ -29,8 +36,17 @@ async def get_cars(
     db: Session = Depends(get_db),
     _=Depends(get_current_user)  # Require authentication
 ):
+    """
+    Get all cars with filtering, sorting and pagination.
+    """
     try:
-        return car_service.get_all_cars(db, currency_code)
+        pagination = PaginationParams(page=page, page_size=page_size)
+        sort_params = SortParams(sort_by=sort_by, sort_order=sort_order)
+        
+        return car_service.get_filtered_cars(
+            db, pagination, name_filter=name, available_only=available_only, 
+            currency_code=currency_code, sort_params=sort_params
+        )
     except InvalidCurrencyException as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -54,7 +70,7 @@ async def get_car(
         )
     ] = Currency.USD.value,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)  # Require authentication
+    _=Depends(get_current_user)  # Require authentication
 ):
     try:
         return car_service.get_car_by_id(car_id, db, currency_code)
