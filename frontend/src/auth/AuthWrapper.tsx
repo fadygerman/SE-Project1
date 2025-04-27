@@ -36,7 +36,6 @@ function AuthWrapper({ user, signOut, children }) {
   const getUserAttributesFn = async (): Promise<userAttributesType> => {
     try {
       const attributes = await fetchUserAttributes();
-      console.log('Fetched user attributes:', attributes);
       return {
         email: attributes.email || '',
         email_verified: (attributes.email_verified === 'true' ? 'true' : 'false') as 'true' | 'false',

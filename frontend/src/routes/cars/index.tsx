@@ -58,7 +58,7 @@ function RouteComponent() {
             </CardContent>
             <CardFooter>
               <Link to={`/cars/$carId`} params={{ carId: car.id.toString() }} className="text-blue-500 hover:underline">
-                View Details
+                Book Now
               </Link>
             </CardFooter>
           </Card>

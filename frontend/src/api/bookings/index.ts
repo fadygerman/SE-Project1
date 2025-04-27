@@ -23,8 +23,7 @@ export const useBookingsQuery = () => {
                     // Return just the items array to maintain compatibility
                     return response.items;
                 }
-                // Fall back to the original response format if needed
-                return response;
+                alert("No bookings found or invalid response structure.");
             }),
     });
 };

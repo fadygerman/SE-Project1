@@ -1,11 +1,13 @@
 import React, { useCallback } from 'react';
 import { GoogleMap, LoadScript } from '@react-google-maps/api';
+import { Car } from '@/openapi';
 
 export interface MapComponentProps {
   center: {
     lat: number;
     lng: number;
   };
+  car: Car;
 }
 const divStyle = {
   display: 'flex',
@@ -17,7 +19,7 @@ const divStyle = {
 
 const containerStyle = {
   width: '100%',
-  height: '400px',
+  height: '300px',
   borderRadius: '10px',
 };
 

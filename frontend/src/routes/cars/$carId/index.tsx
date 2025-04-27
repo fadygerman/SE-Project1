@@ -35,19 +35,30 @@ function RouteComponent() {
       return
     }
     setIsBooking(true)
-    setTimeout(() => {
-      alert(`Car booked from ${dateRange.from ? format(dateRange.from, "PPP") : "N/A"} to ${dateRange.to ? format(dateRange.to, "PPP") : "N/A"}`)
-      setIsBooking(false)
-    }, 2000)
+
     addBooking.mutate({
         carId: Number(carId),
         startDate: formatDateForApi(dateRange.from!),
         endDate: formatDateForApi(dateRange.to!),
         plannedPickupTime: pickupTime,
         currencyCode: selectedCurrency as Currency,
-        })
+        }, 
+        {
+          onSuccess: () => {
+            alert(
+              `Car booked from ${dateRange.from ? format(dateRange.from, "PPP") : "N/A"} to ${dateRange.to ? format(dateRange.to, "PPP") : "N/A"}`
+            );
+            setIsBooking(false);
+          },
+          onError: () => {
+            alert("Booking failed. Please try again.");
+            setIsBooking(false);
+          },
+        }
+    ); 
+    
   }
-  console.log(carId)
+
   const carDetail = useCarIdQuery(Number(carId));
   const addBooking = useCreateBookingMutation();
 
@@ -75,30 +86,34 @@ function RouteComponent() {
       </header>
       <div className="grid gap-6 md:grid-cols-2">
         <div>
+          <Card>
           <div className="overflow-hidden justify-center items-center flex rounded-lg">
-            <div style={{ maxHeight: "400px"}}>
+            <div style={{ maxHeight: "400px",minHeight: "400px", width: "100%", backgroundColor:"white", borderRadius:"10px"}} className="flex items-center justify-center">
             <img
               src={`/assets/car_images/car-${carDetail.id}.jpg`}
               alt={carDetail.name}
               className="h-full w-auto object-contain"
+              style={{ height: "100%", width: "100%", objectFit: "cover" }}
             />
             </div>
           </div>
+          </Card>
             <div className="mt-6">
               <h2 className="text-2xl font-bold">Car Details</h2>
               <Separator className="my-4" />
-              <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
+              <dl className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div >
                   <dt className="text-sm font-medium text-muted-foreground">Model</dt>
                   <dd className="text-lg">{carDetail.model}</dd>
                 </div>
-                <div>
+                <div >
                   <dt className="text-sm font-medium text-muted-foreground">Price</dt>
                   <dd className="text-lg font-bold flex items-center gap-2">
                     {carDetail.pricePerDay}
                     <Select 
                       defaultValue="USD" 
                       onValueChange={(value) => setSelectedCurrency(value)}
+
                     >
                       <SelectTrigger className="w-32">
                         <SelectValue placeholder="Currency" />
@@ -114,7 +129,7 @@ function RouteComponent() {
                     </Select>
                   </dd>
                 </div>
-                <div>
+                <div >
                 <dt className="text-sm font-medium text-muted-foreground">Availability</dt>
                 <dd className="text-lg">{carDetail.isAvailable ? "Available" : "Not Available"}</dd>
                 </div>
@@ -233,7 +248,7 @@ function RouteComponent() {
             <h2 className="text-2xl font-bold">Location</h2>
             <Separator className="my-4" />
             {carDetail.latitude != null && carDetail.longitude != null && (
-              <div style={{width:"100%"}}><MapComponent center={{ lat: carDetail.latitude, lng: carDetail.longitude }}></MapComponent></div>
+              <div style={{width:"100%"}}><MapComponent center={{ lat: carDetail.latitude, lng: carDetail.longitude }} car={carDetail}></MapComponent></div>
             )}
           </div>
         </div>
