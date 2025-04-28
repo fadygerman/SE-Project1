@@ -30,7 +30,7 @@ import {
 
 export interface GetCarApiV1CarsCarIdGetRequest {
     carId: number;
-    currencyCode?: GetCarApiV1CarsCarIdGetCurrencyCodeEnum;
+    currency_code?: string;
 }
 
 export interface GetCarsApiV1CarsGetRequest {
@@ -108,8 +108,8 @@ export class CarsApi extends runtime.BaseAPI implements CarsApiInterface {
 
         const queryParameters: any = {};
 
-        if (requestParameters['currencyCode'] != null) {
-            queryParameters['currency_code'] = requestParameters['currencyCode'];
+        if (requestParameters['currency_code'] != null) {
+            queryParameters['currency_code'] = requestParameters['currency_code'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};

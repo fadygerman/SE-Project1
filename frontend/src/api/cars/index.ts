@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { carsApi } from "@/apiClient/client.ts";
-import { Car } from "@/openapi";
+
 
 
 // Custom hook using useQuery for fetching cars
@@ -21,13 +21,13 @@ export const useCarsQuery = () => {
 };
 
 // Custom hook using useQuery for fetching a single car by carId
-export const useCarIdQuery = (carId: number) => {
+export const useCarIdQuery = (carId: number, currency_code: string) => {
     return useQuery({
-        queryKey: ['car', carId],
-        queryFn: () =>
-            carsApi.getCarApiV1CarsCarIdGet({ carId }).then((result) => {
-                return result;
-            }),
-        enabled: !!carId, // Ensures the query only runs if carId is provided
-    }).data as Car;
-};
+      queryKey: ['car', carId, currency_code],
+      queryFn: () =>
+        carsApi.getCarApiV1CarsCarIdGet({ carId, currency_code }).then((result) => {
+          return result;
+        }),
+      enabled: !!carId, // ✅ This keeps old car detail while fetching the new one
+    });
+  };
