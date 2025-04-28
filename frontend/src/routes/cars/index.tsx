@@ -3,25 +3,39 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from '@/components/ui/breadcrumb' // Removed unused imports
 import { useCarsQuery } from "@/api/cars";
 import { Car } from "@/openapi";
+import { CurrencySelector } from '@/components/ui/currencySelector';
+import { useEffect, useState } from 'react';
+import { useCurrency } from '@/components/currency/CurrencyWrapper';
 
 export const Route = createFileRoute('/cars/')({
   component: RouteComponent,
 })
 
 function RouteComponent() {
-  const { data: cars, isLoading, error } = useCarsQuery();
-  console.log(cars); // For debugging
   
-  if (isLoading) {
-    return <div>Loading cars...</div>;
+  const { selectedCurrency,setSelectedCurrency} = useCurrency();
+  const [shownCurrency, setShownCurrency] = useState<string>(selectedCurrency);
+  const [cachedCarDetails, setCachedCarDetails] = useState<[Car] | undefined>(undefined);
+  const { data: cars,  isLoading, } = useCarsQuery(selectedCurrency);
+  useEffect(() => {
+     if (cars) {
+      setCachedCarDetails(cars);
+      setShownCurrency(selectedCurrency);
+    }
+ 
+   }, [cars]);
+  const activeCars = cars || cachedCarDetails;
+  
+  if (activeCars == undefined) {
+    return <div style={{margin:"auto"}}>Loading Cars </div>;
   }
 
-  if (error) {
-      return <div>Error loading cars: {(error as Error).message}</div>;
+  if (activeCars == undefined && !isLoading) {
+    return <div  style={{margin:"auto"}}>Error loading cars. </div>;
   }
 
-  if (!cars || !cars.length) {
-      return <div>No cars available</div>;
+  if (!activeCars ||!activeCars.length) {
+      return <div  style={{margin:"auto"}}>No cars available</div>;
   }
 
   return (
@@ -34,10 +48,25 @@ function RouteComponent() {
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
-        <h1 className="mt-4 text-3xl font-bold">Available Cars</h1>
+        <div className="mt-4 flex items-center justify-between mr-4">
+          <div>
+            <h2 className="text-2xl font-bold">Available Cars</h2>
+          </div>
+          <div>
+          <dt className="text-sm font-medium text-muted-foreground">Currency</dt>
+          <CurrencySelector
+            value={selectedCurrency}
+            onCurrencyChange={(value) => {
+              setSelectedCurrency(value);
+            }}
+          />
+          </div>
+
+        </div>
       </header>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-        {cars.filter((car: Car) => car.isAvailable) // Filter cars based on availability
+        {activeCars.filter((car: Car) => car.isAvailable) // Filter cars based on availability
         .map((car: Car) => (
           <Card key={car.id} className="shadow-md">
             <CardContent className="pt-6">
@@ -53,7 +82,7 @@ function RouteComponent() {
             </CardHeader>
               <CardTitle>{car.name}</CardTitle>
               <p className="mt-2">Model: {car.model}</p>
-              <p className="mt-1">Price: {car.pricePerDay} per day</p>
+              <p className="mt-1">Price: {car.pricePerDay} {shownCurrency} per day</p>
               <p className="mt-1">Status: {car.isAvailable ? "Available" : "Not Available"}</p>
             </CardContent>
             <CardFooter>
