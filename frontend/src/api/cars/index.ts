@@ -1,14 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { carsApi } from "@/apiClient/client.ts";
-import { Car } from "@/openapi";
+
 
 
 // Custom hook using useQuery for fetching cars
-export const useCarsQuery = () => {
+export const useCarsQuery = (currency_code:string) => {
     return useQuery({
-        queryKey: ['cars'],
+        queryKey: ['cars', currency_code],
         queryFn: async () =>
-            await carsApi.getCarsApiV1CarsGet().then((response: any) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await carsApi.getCarsApiV1CarsGet({currency_code:currency_code}).then((response: any) => {
                 // Check if the response has the new pagination structure
                 if (response && response.items) {
                     // Return just the items array to maintain compatibility
@@ -21,13 +22,13 @@ export const useCarsQuery = () => {
 };
 
 // Custom hook using useQuery for fetching a single car by carId
-export const useCarIdQuery = (carId: number) => {
+export const useCarIdQuery = (carId: number, currency_code: string) => {
     return useQuery({
-        queryKey: ['car', carId],
-        queryFn: () =>
-            carsApi.getCarApiV1CarsCarIdGet({ carId }).then((result) => {
-                return result;
-            }),
-        enabled: !!carId, // Ensures the query only runs if carId is provided
-    }).data as Car;
-};
+      queryKey: ['car', carId, currency_code],
+      queryFn: () =>
+        carsApi.getCarApiV1CarsCarIdGet({ carId, currency_code }).then((result) => {
+          return result;
+        }),
+      enabled: !!carId, // ✅ This keeps old car detail while fetching the new one
+    });
+  };
