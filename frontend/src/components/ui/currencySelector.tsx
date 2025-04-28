@@ -12,18 +12,18 @@ export function CurrencySelector({ onCurrencyChange, value }: { onCurrencyChange
   };
 
   return (
-    <Select value={currency} onValueChange={handleChange}>
-      <SelectTrigger className="w-32">
-        <SelectValue placeholder="Currency" />
-      </SelectTrigger>
-      <SelectContent>
-        {currencyCodes.map((code) => (
-          <SelectItem key={code} value={code}>
-            {code} - {getCurrencyDisplayName(code)}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+      <Select value={currency} onValueChange={handleChange}>
+          <SelectTrigger className="w-32">
+            <SelectValue placeholder="Currency" />
+          </SelectTrigger>
+          <SelectContent>
+            {currencyCodes.map((code) => (
+              <SelectItem key={code} value={code}>
+                {code} - {getCurrencyDisplayName(code)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
   );
 }
 

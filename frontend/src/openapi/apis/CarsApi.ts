@@ -40,7 +40,7 @@ export interface GetCarsApiV1CarsGetRequest {
     availableOnly?: boolean;
     sortBy?: string;
     sortOrder?: string;
-    currencyCode?: GetCarsApiV1CarsGetCurrencyCodeEnum;
+    currency_code?: string;
 }
 
 /**
@@ -171,8 +171,8 @@ export class CarsApi extends runtime.BaseAPI implements CarsApiInterface {
             queryParameters['sort_order'] = requestParameters['sortOrder'];
         }
 
-        if (requestParameters['currencyCode'] != null) {
-            queryParameters['currency_code'] = requestParameters['currencyCode'];
+        if (requestParameters['currency_code'] != null) {
+            queryParameters['currency_code'] = requestParameters['currency_code'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};

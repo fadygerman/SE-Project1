@@ -4,11 +4,11 @@ import { carsApi } from "@/apiClient/client.ts";
 
 
 // Custom hook using useQuery for fetching cars
-export const useCarsQuery = () => {
+export const useCarsQuery = (currency_code:string) => {
     return useQuery({
-        queryKey: ['cars'],
+        queryKey: ['cars', currency_code],
         queryFn: async () =>
-            await carsApi.getCarsApiV1CarsGet().then((response: any) => {
+            await carsApi.getCarsApiV1CarsGet({currency_code:currency_code}).then((response: any) => {
                 // Check if the response has the new pagination structure
                 if (response && response.items) {
                     // Return just the items array to maintain compatibility

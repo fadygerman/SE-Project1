@@ -16,6 +16,7 @@ import { Currency } from "@/openapi/models/Currency";
 import MapComponent from '@/components/maps/MapComponent'
 import { CurrencySelector } from '@/components/ui/currencySelector'
 import { Car } from '@/openapi/models/Car'
+import { useCurrency } from '@/components/currency/CurrencyWrapper'
 
 export const Route = createFileRoute('/cars/$carId/')({
   component: RouteComponent,
@@ -26,8 +27,8 @@ function RouteComponent() {
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
   const [pickupTime, setPickupTime] = useState<string>("12:00");
   const [isBooking, setIsBooking] = useState(false);
-  const [ selectedCurrency, setSelectedCurrency ] = useState<string>("USD"); // Context currency
-  const { data: carDetail} = useCarIdQuery(Number(carId), selectedCurrency); // Use selectedCurrency directly
+  const { selectedCurrency,setSelectedCurrency} = useCurrency();
+  const { data: carDetail, isLoading} = useCarIdQuery(Number(carId), selectedCurrency); // Use selectedCurrency directly
   const navigate = useNavigate();
 
   const [cachedCarDetail, setCachedCarDetail] = useState<Car | undefined>(undefined);
@@ -80,10 +81,17 @@ function RouteComponent() {
       },
     });
   };
-
-  if (!activeCarDetail) {
+  if (activeCarDetail== undefined && isLoading) {
     return (
-      <div className="container mx-auto p-4">
+      <div style={{margin:"auto"}} >
+        <p>Loading car...</p>
+      </div>
+    );
+  }
+
+  if (activeCarDetail== undefined && !isLoading) {
+    return (
+      <div style={{margin:"auto"}}>
         <p>Error loading car details.</p>
       </div>
     );
