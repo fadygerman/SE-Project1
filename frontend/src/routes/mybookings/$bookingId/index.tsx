@@ -1,5 +1,10 @@
 import {createFileRoute, Link} from '@tanstack/react-router';
-import { useBookingIdQuery } from "@/api/bookings";
+import {
+    useBookingIdQuery,
+    useCancelBookingMutation,
+    useCompleteBookingWithWindow, usePickUpBookingMutation,
+    useReturnBookingMutation
+} from "@/api/bookings";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import MapComponent from '@/components/maps/MapComponent';
@@ -13,7 +18,21 @@ function RouteComponent() {
     const { data: booking, error, isLoading } = useBookingIdQuery(Number(bookingId));
     const formatDate = (date: Date) => {
         return date.toISOString().split('T')[0]; // formats to 'YYYY-MM-DD'
-      };
+    };
+
+    const returnBooking = useCompleteBookingWithWindow(booking!);
+    const cancelBooking = useCancelBookingMutation(
+        Number(bookingId),
+        booking?.carId ?? 0
+    );
+    const pickUpBooking       = usePickUpBookingMutation(
+        (bookingId),
+        booking?.carId ?? 0
+    )
+
+
+    const isFinalized =
+        booking?.status === 'COMPLETED' || booking?.status === 'CANCELED';
 
     if (isLoading) {
         return <div>Loading booking details...</div>;
@@ -62,7 +81,7 @@ function RouteComponent() {
                             {booking.returnDate && (
                                 <div>
                                     <dt className="text-sm font-medium text-muted-foreground">Return Date</dt>
-                                    <dd className="text-lg">{new Date(booking.returnDate).toLocaleString()}</dd>
+                                    <dd className="text-lg">{formatDate(booking.returnDate).toLocaleString()}</dd>
                                 </div>
                             )}
                             <div>
@@ -145,6 +164,44 @@ function RouteComponent() {
                     </div>
                 </CardContent>
             </Card>
+
+            {!isFinalized && (
+                <div className="flex space-x-4 mt-6">
+                    {booking.status === 'PLANNED' && (
+                        <>
+                            <button
+                                onClick={() => pickUpBooking.mutate(undefined, {
+                                    onSuccess: () => {
+                                        window.location.reload();
+                                    },
+                                })}
+                                disabled={pickUpBooking.isLoading}
+                                className="btn btn-primary"
+                            >
+                                {pickUpBooking.isLoading ? 'Picking up…' : 'Pick Up Car'}
+                            </button>
+                            <button
+                                onClick={() => cancelBooking.mutate()}
+                                disabled={cancelBooking.isLoading}
+                                className="btn btn-warning"
+                            >
+                                {cancelBooking.isLoading ? 'Canceling…' : 'Cancel Booking'}
+                            </button>
+                        </>
+                    )}
+
+                    {/* Once ACTIVE, only allow return */}
+                    {booking.status === 'ACTIVE' && (
+                        <button
+                            onClick={() => returnBooking.mutate()}
+                            disabled={returnBooking.isLoading}
+                            className="btn btn-primary"
+                        >
+                            {returnBooking.isLoading ? 'Returning…' : 'Return Car'}
+                        </button>
+                    )}
+                </div>
+            )}
             
             
                 {booking.car && (

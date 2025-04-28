@@ -23,8 +23,8 @@ async function makeConfig(useIdToken = false): Promise<Configuration> {
     }
 
     return new Configuration({
-        basePath: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000',
-        accessToken: () => raw, // generator expects a function
+        basePath: 'http://18.185.49.239:8000',
+        accessToken: () => raw,
     });
 }
 
