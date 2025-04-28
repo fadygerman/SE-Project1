@@ -8,6 +8,7 @@ export const useCarsQuery = (currency_code:string) => {
     return useQuery({
         queryKey: ['cars', currency_code],
         queryFn: async () =>
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             await carsApi.getCarsApiV1CarsGet({currency_code:currency_code}).then((response: any) => {
                 // Check if the response has the new pagination structure
                 if (response && response.items) {
