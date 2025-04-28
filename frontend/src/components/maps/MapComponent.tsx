@@ -102,10 +102,7 @@ const MapComponent: React.FC<MapComponentProps> = ({ center }) => {
 
   return (
     <div style={divStyle}>
-      <LoadScript
-        googleMapsApiKey="AIzaSyDu-dTYm2TIAQm6-ViVIpL8gKiVHCvfWhE"
-        libraries={['marker']}
-      >
+     
         <GoogleMap
           mapContainerStyle={containerStyle}
           center={center}
@@ -116,7 +113,6 @@ const MapComponent: React.FC<MapComponentProps> = ({ center }) => {
             mapId: 'a1c37327e521572c',
           }}
         />
-      </LoadScript>
 
     </div>
     

@@ -7,6 +7,7 @@ import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { routeTree } from './routeTree.gen'
 import AuthWrapper from './auth/AuthWrapper'
 import { CurrencyProvider } from './components/currency/CurrencyWrapper'
+import { LoadScript } from '@react-google-maps/api'
 
 // Create a new router instance
 const router = createRouter({ routeTree })
@@ -26,7 +27,13 @@ if (!rootElement.innerHTML) {
         <StrictMode>
             <AuthWrapper user={undefined} signOut={undefined} >
                 <CurrencyProvider>
-                    <RouterProvider router={router} />
+                <LoadScript
+        googleMapsApiKey="AIzaSyDu-dTYm2TIAQm6-ViVIpL8gKiVHCvfWhE"
+        libraries={['marker']}
+      >
+        <RouterProvider router={router} />
+      </LoadScript>
+                    
                 </CurrencyProvider>
             </AuthWrapper>
         </StrictMode>,
