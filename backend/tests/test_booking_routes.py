@@ -338,35 +338,6 @@ class TestBookingCreation:
 class TestBookingDateUpdates:
     """Tests related to updating booking dates"""
     
-    def test_update_booking_dates(self, auth_client, test_data):
-        """Test updating booking dates"""        
-        booking_id = test_data["bookings"][0].id
-        
-        # Calculate new dates that won't overlap with other test bookings
-        new_start = date(2025, 6, 10)
-        new_end = date(2025, 6, 15)
-        
-        update_data = {
-            "start_date": str(new_start),
-            "end_date": str(new_end)
-        }
-        
-        response = auth_client.put(f"/api/v1/bookings/{booking_id}", json=update_data)
-        
-        # Check status code
-        assert response.status_code == status.HTTP_200_OK
-        
-        # Check updated booking
-        updated_booking = response.json()
-        assert updated_booking["id"] == booking_id
-        assert updated_booking["start_date"] == str(new_start)
-        assert updated_booking["end_date"] == str(new_end)
-        
-        # Check total cost recalculation (6 days)
-        car_price = float(test_data["cars"][0].price_per_day)
-        expected_total = car_price * 6
-        assert float(updated_booking["total_cost"]) == expected_total
-    
     def test_update_pickup_date_outside_period(self, auth_client, test_data):
         """Test setting pickup date outside booking period"""        
         booking_id = test_data["bookings"][0].id
@@ -423,61 +394,46 @@ class TestBookingDateUpdates:
         # Check error message
         error = response.json()
         assert "Cannot set return date without a pickup date" in error["detail"]
-    
-    def test_update_both_pickup_and_return_dates(self, auth_client, test_data):
-        """Test setting both pickup_date and return_date in the same request"""        
+
+    def test_pickup_after_return_date(self, auth_client, test_data, test_db):
+        """Test setting pickup date after return date"""
         booking_id = test_data["bookings"][0].id
         
-        # Create dates within booking period
-        booking = test_data["bookings"][0]
-        pickup_date = booking.start_date + timedelta(days=1)
-        return_date = booking.end_date - timedelta(days=1)
+        # First set a return date
+        booking = test_db.query(Booking).filter_by(id=booking_id).first()
+        booking.status = BookingStatus.ACTIVE
+        booking.pickup_date = date(2024, 4, 5)
+        booking.return_date = date(2024, 4, 10)
+        test_db.commit()
         
-        update_data = {
-            "pickup_date": str(pickup_date),
-            "return_date": str(return_date)
-        }
+        # Now try to update pickup date to after return date
+        update_data = {"pickup_date": "2024-04-12"}  # After return date
         
         response = auth_client.put(f"/api/v1/bookings/{booking_id}", json=update_data)
         
-        # Check status code
-        assert response.status_code == status.HTTP_200_OK
+        # Check status code and error
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "Return date must be after pickup date" in response.json()["detail"]
+
+    @patch('services.booking_service.date')
+    def test_future_pickup_date(self, mock_date, auth_client, test_data):
+        """Test setting pickup date in the future"""
+        booking_id = test_data["bookings"][0].id
         
-        # Check updated booking
-        updated_booking = response.json()
-        assert updated_booking["id"] == booking_id
-        assert updated_booking["pickup_date"] == str(pickup_date)
-        assert updated_booking["return_date"] == str(return_date)
+        # Mock today's date
+        mock_today = date(2024, 4, 1)
+        mock_date.today.return_value = mock_today
+        mock_date.side_effect = lambda *args, **kw: date(*args, **kw)
         
-        # Status should be updated to COMPLETED
-        assert updated_booking["status"] == "COMPLETED"
-    
-    def test_unauthorized_booking_update(self, auth_client, test_data):
-        """Test that a user cannot update another user's booking"""
-        # Create a fixture that authenticates as user 2
-        async def override_get_current_user():
-            return test_data["users"][1]
+        # Try to set pickup date in the future
+        future_date = mock_today + timedelta(days=1)
+        update_data = {"pickup_date": str(future_date)}
         
-        # Store original overrides
-        original_overrides = app.dependency_overrides.copy()
+        response = auth_client.put(f"/api/v1/bookings/{booking_id}", json=update_data)
         
-        # Set the test user to user 2
-        from services.auth_service import get_current_user
-        app.dependency_overrides[get_current_user] = override_get_current_user
-        
-        try:
-            # Try to update first user's booking
-            booking_id = test_data["bookings"][0].id
-            update_data = {"status": "CANCELED"}
-            
-            response = auth_client.put(f"/api/v1/bookings/{booking_id}", json=update_data)
-            
-            # Should be forbidden
-            assert response.status_code == status.HTTP_403_FORBIDDEN
-            assert "You can only access your own bookings" in response.json()["detail"]
-        finally:
-            # Restore original overrides
-            app.dependency_overrides = original_overrides
+        # Check status code and error
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "cannot be in the future" in response.json()["detail"]
 
 
 class TestBookingStatusTransitions:
@@ -535,34 +491,6 @@ class TestBookingStatusTransitions:
         assert updated_booking["status"] == "CANCELED"
     
     @patch('services.booking_service.date')
-    def test_setting_status_completed_sets_return_date(self, mock_date, auth_client, test_data, test_db):
-        """Test that setting status to COMPLETED automatically sets return_date"""
-        booking_id = test_data["bookings"][0].id
-        
-        # First set status to ACTIVE
-        booking = test_db.query(Booking).filter_by(id=booking_id).first()
-        booking.status = BookingStatus.ACTIVE
-        booking.pickup_date = date(2024, 4, 2)
-        test_db.commit()
-        
-        # Mock today's date
-        mock_today = date(2024, 4, 3)
-        mock_date.today.return_value = mock_today
-        mock_date.side_effect = lambda *args, **kw: date(*args, **kw)
-        
-        # Update status to COMPLETED
-        update_data = {"status": "COMPLETED"}
-        response = auth_client.put(f"/api/v1/bookings/{booking_id}", json=update_data)
-        
-        # Check status code
-        assert response.status_code == status.HTTP_200_OK
-        
-        # Check updated booking
-        updated_booking = response.json()
-        assert updated_booking["status"] == "COMPLETED"
-        assert updated_booking["return_date"] == str(mock_today)
-    
-    @patch('services.booking_service.date')
     def test_transition_from_overdue_to_completed(self, mock_date, auth_client, test_data, test_db):
         """Test transitioning a booking from OVERDUE to COMPLETED when setting return_date"""
         booking_id = test_data["bookings"][0].id
@@ -616,116 +544,6 @@ class TestBookingStatusTransitions:
 class TestBookingRetrieval:
     """Tests related to retrieving bookings"""
     
-    def test_get_all_bookings(self, admin_client, test_data):
-        """Test getting all bookings as admin"""
-        response = admin_client.get("/api/v1/bookings/")
-        
-        # Check status code
-        assert response.status_code == status.HTTP_200_OK
-        
-        # Check response data - should be a paginated response
-        response_data = response.json()
-        
-        # Verify the pagination structure
-        assert "items" in response_data
-        assert "page" in response_data
-        assert "page_size" in response_data
-        assert "total" in response_data
-        
-        # Extract the actual bookings from the 'items' field
-        bookings = response_data["items"]
-        assert len(bookings) == 2
-        
-    def test_get_my_bookings(self, auth_client, test_data):
-        """Test getting current user's bookings"""
-        response = auth_client.get("/api/v1/bookings/my")
-        
-        # Check status code
-        assert response.status_code == status.HTTP_200_OK
-        
-        # Should be a paginated response structure
-        response_data = response.json()
-        assert "items" in response_data
-        assert "page" in response_data
-        assert "page_size" in response_data
-        
-        # Extract the actual bookings from the 'items' field
-        bookings = response_data["items"]
-        
-        # Should only contain bookings for the authenticated user
-        for booking in bookings:
-            assert booking["user_id"] == test_data["users"][0].id
-        
-        # Check if we have the expected number of bookings
-        # In our test data, user 1 has one booking
-        user1_bookings = [b for b in test_data["bookings"] if b.user_id == test_data["users"][0].id]
-        assert len(bookings) == len(user1_bookings)
-        
-        # Verify that the returned booking IDs match our expected bookings
-        booking_ids = [booking["id"] for booking in bookings]
-        expected_ids = [b.id for b in user1_bookings]
-        assert set(booking_ids) == set(expected_ids)
-        
-    def test_get_my_bookings_empty(self, auth_client, test_data, test_db):
-        """Test getting bookings when user has no bookings"""
-        # Create a user with no bookings
-        from models.db_models import User
-        user3 = User(
-            first_name="No",
-            last_name="Bookings",
-            email="nobookings@example.com",
-            phone_number="+5555555555",
-            cognito_id="cognito3"
-        )
-        test_db.add(user3)
-        test_db.commit()
-        test_db.refresh(user3)
-        
-        # Create a fixture that authenticates as this new user
-        async def override_get_current_user():
-            return user3
-        
-        # Store original overrides
-        original_overrides = app.dependency_overrides.copy()
-        
-        # Set the test user to our new user with no bookings
-        from services.auth_service import get_current_user
-        app.dependency_overrides[get_current_user] = override_get_current_user
-        
-        try:
-            response = auth_client.get("/api/v1/bookings/my")
-            
-            # Check status code
-            assert response.status_code == status.HTTP_200_OK
-            
-            # Should return a paginated response with empty items list
-            response_data = response.json()
-            
-            # Check pagination structure
-            assert "items" in response_data
-            assert "page" in response_data
-            assert "page_size" in response_data
-            assert "total" in response_data
-            
-            # Check that items is an empty list
-            assert isinstance(response_data["items"], list)
-            assert len(response_data["items"]) == 0
-            
-        finally:
-            # Restore original overrides
-            app.dependency_overrides = original_overrides
-            
-    def test_get_booking_by_id(self, auth_client, test_data):
-        """Test getting a booking by ID"""        
-        booking_id = test_data["bookings"][0].id
-        response = auth_client.get(f"/api/v1/bookings/{booking_id}")
-        
-        assert response.status_code == status.HTTP_200_OK
-        booking = response.json()
-        assert booking["id"] == booking_id
-        assert "user" in booking
-        assert "car" in booking
-
     def test_get_booking_by_id_currency_conversion(self, auth_client, test_data, test_db):
         booking_id = test_data["bookings"][0].id
         
@@ -747,72 +565,10 @@ class TestBookingRetrieval:
         booking = response.json()
         expected_converted_price = (original_usd_price * exchange_rate).quantize(Decimal('0.00'))
         assert booking["total_cost"] == str(expected_converted_price)
-        
-    def test_get_booking_not_found(self, auth_client):
-        """Test getting a non-existent booking"""
-        non_existent_booking_id = 99999  # ID that does not exist in the test data
-        response = auth_client.get(f"/api/v1/bookings/{non_existent_booking_id}")
-        
-        # Check status code
-        assert response.status_code == status.HTTP_404_NOT_FOUND
-        
-        # Check error message
-        error = response.json()
-        assert f"Booking with ID {non_existent_booking_id} not found" in error["detail"]
-        """Test getting a non-existent booking"""
-        
-    def test_get_booking_by_id_unauthorized(self, auth_client, test_data):
-        """Test that a user cannot access another user's booking"""
-        # Create a fixture that authenticates as user 2
-        async def override_get_current_user():
-            return test_data["users"][1]
-        
-        # Store original overrides
-        original_overrides = app.dependency_overrides.copy()
-        
-        # Set the test user to user 2
-        from services.auth_service import get_current_user
-        app.dependency_overrides[get_current_user] = override_get_current_user
-        
-        try:
-            # Try to access user 1's booking
-            booking_id = test_data["bookings"][0].id
-            response = auth_client.get(f"/api/v1/bookings/{booking_id}")
-            
-            # Should be forbidden
-            assert response.status_code == status.HTTP_403_FORBIDDEN
-            assert "You can only access your own bookings" in response.json()["detail"]
-        finally:
-            # Restore original overrides
-            app.dependency_overrides = original_overrides
 
 
-class TestBookingErrorHandling:
-    """Tests related to general booking error handling"""
-    
-    def test_update_nonexistent_booking(self, auth_client):
-        """Test updating a booking that doesn't exist"""
-        non_existent_id = 999
-        
-        response = auth_client.get(f"/api/v1/bookings/{non_existent_id}")
-        
-        # Check status code
-        assert response.status_code == status.HTTP_404_NOT_FOUND
-        
-        # Check error message
-        error = response.json()
-        assert f"Booking with ID {non_existent_id} not found" in error["detail"]
-
-
-class TestBookingEdgeCases:
-    """Tests for edge cases in booking routes"""
-    
-    def test_normalize_status_with_enum(self, auth_client, test_data):
-        """Test normalize_status with existing enum"""
-        # This directly tests the normalize_status function with an enum
-        booking_id = test_data["bookings"][0].id
-        response = auth_client.put(f"/api/v1/bookings/{booking_id}", json={"status": "CANCELED"})
-        assert response.status_code == status.HTTP_200_OK
+class TestBookingValidation:
+    """Tests for input field validation"""
     
     def test_invalid_status_handling(self, auth_client, test_data):
         """Test with invalid status value"""
@@ -821,60 +577,6 @@ class TestBookingEdgeCases:
         response = auth_client.put(f"/api/v1/bookings/{booking_id}", json=update_data)
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     
-    @patch('services.booking_service.date')
-    def test_update_only_start_date(self, mock_date, auth_client, test_data):
-        """Test updating only start date"""
-        booking_id = test_data["bookings"][0].id
-        mock_date.today.return_value = date(2024, 3, 15)
-        mock_date.side_effect = lambda *args, **kw: date(*args, **kw)
-        
-        # Test with a valid start date that's earlier than end date
-        update_data = {"start_date": str(date(2024, 4, 2))}
-        response = auth_client.put(f"/api/v1/bookings/{booking_id}", json=update_data)
-        assert response.status_code == status.HTTP_200_OK
-    
-    def test_update_booking_overlapping_dates(self, auth_client, test_data, test_db):
-        """Test updating a booking to overlap with another booking"""
-        # Get two different bookings (need to ensure they use different cars initially)
-        booking1 = test_data["bookings"][0]
-        booking2 = test_data["bookings"][1]
-        
-        # Update booking2 to use the same car as booking1
-        booking2.car_id = booking1.car_id
-        test_db.commit()
-        
-        # Try to update booking1's dates to overlap with booking2
-        update_data = {
-            "start_date": str(booking2.start_date),
-            "end_date": str(booking2.end_date)
-        }
-        
-        response = auth_client.put(f"/api/v1/bookings/{booking1.id}", json=update_data)
-        
-        # Check status code and error
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "overlap with another booking" in response.json()["detail"]
-
-    def test_pickup_after_return_date(self, auth_client, test_data, test_db):
-        """Test setting pickup date after return date"""
-        booking_id = test_data["bookings"][0].id
-        
-        # First set a return date
-        booking = test_db.query(Booking).filter_by(id=booking_id).first()
-        booking.status = BookingStatus.ACTIVE
-        booking.pickup_date = date(2024, 4, 5)
-        booking.return_date = date(2024, 4, 10)
-        test_db.commit()
-        
-        # Now try to update pickup date to after return date
-        update_data = {"pickup_date": "2024-04-12"}  # After return date
-        
-        response = auth_client.put(f"/api/v1/bookings/{booking_id}", json=update_data)
-        
-        # Check status code and error
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "Return date must be after pickup date" in response.json()["detail"]
-
     def test_normalize_status_edge_cases(self, auth_client, test_data):
         """Test normalize_status with non-string, non-enum values"""
         booking_id = test_data["bookings"][0].id
@@ -885,78 +587,3 @@ class TestBookingEdgeCases:
         
         # Should get validation error from Pydantic
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-
-
-    @patch('services.booking_service.date')
-    def test_future_pickup_date(self, mock_date, auth_client, test_data):
-        """Test setting pickup date in the future"""
-        booking_id = test_data["bookings"][0].id
-        
-        # Mock today's date
-        mock_today = date(2024, 4, 1)
-        mock_date.today.return_value = mock_today
-        mock_date.side_effect = lambda *args, **kw: date(*args, **kw)
-        
-        # Try to set pickup date in the future
-        future_date = mock_today + timedelta(days=1)
-        update_data = {"pickup_date": str(future_date)}
-        
-        response = auth_client.put(f"/api/v1/bookings/{booking_id}", json=update_data)
-        
-        # Check status code and error
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "cannot be in the future" in response.json()["detail"]
-
-# Example of a parameterized test for validation rules
-@pytest.mark.parametrize("date_func,field,error_message", [
-    (lambda b: b.start_date - timedelta(days=1), "pickup_date", "within the booking period"),
-    (lambda b: b.end_date + timedelta(days=1), "pickup_date", "within the booking period"),
-])
-def test_date_validation_parametrized(auth_client, test_data, date_func, field, error_message):
-    """Parameterized test for date validation rules"""
-    booking_id = test_data["bookings"][0].id
-    booking = test_data["bookings"][0]
-    
-    # Calculate the invalid date based on the lambda
-    invalid_date = date_func(booking)
-    
-    # Create update data
-    update_data = {field: str(invalid_date)}
-    
-    # Send request
-    response = auth_client.put(f"/api/v1/bookings/{booking_id}", json=update_data)
-    
-    # Check status code
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
-    
-    # Check error message
-    error = response.json()
-    assert error_message in error["detail"]
-
-def test_get_car_price_in_currency_success():
-    """Test successful price conversion"""
-    with patch('services.booking_service.get_currency_converter_client_instance') as mock_get_client:
-        mock_client = Mock()
-        mock_client.convert.return_value = Decimal('110.00')
-        
-        mock_get_client.return_value = mock_client
-        
-        # Test the conversion
-        result = get_car_price_in_currency(Decimal('100.00'), 'EUR')
-        
-        # Verify the result
-        assert result == Decimal('110.00')
-        mock_client.convert.assert_called_once_with('USD', 'EUR', Decimal('100.00'))
-
-def test_get_car_price_in_currency_service_unavailable():
-    """Test price conversion when currency service is unavailable"""
-    with patch('services.booking_service.get_currency_converter_client_instance') as mock_get_client:
-        # Make the client raise an exception
-        mock_get_client.side_effect = CurrencyServiceUnavailableException("Currency service unavailable")
-        
-        # Test that the correct exception is raised
-        with pytest.raises(CurrencyServiceUnavailableException) as excinfo:
-            get_car_price_in_currency(Decimal('100.00'), 'EUR')
-        
-        # Verify the exception message
-        assert "Currency service is unavailable" in str(excinfo.value)

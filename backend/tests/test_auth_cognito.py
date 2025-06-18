@@ -645,3 +645,109 @@ class TestAdvancedAuthScenarios:
             phrase in detail
             for phrase in ["Missing user identifier", "Authentication failed", "Invalid token: Missing user identifier"]
         )
+
+class TestCognitoServiceEdgeCases:
+    """Tests for edge cases in Cognito service"""
+    
+    @mock.patch('services.cognito_service.PyJWKClient')
+    def test_jwks_client_error_with_message(self, mock_jwk_client):
+        """Test handling of PyJWKClientError with specific error message"""
+        # Arrange: Mock JWKS client to raise specific error
+        mock_jwk_client.return_value.get_signing_key_from_jwt.side_effect = jwt.exceptions.PyJWKClientError("JWKS endpoint not found")
+        
+        # Act & Assert
+        with pytest.raises(InvalidTokenException) as excinfo:
+            verify_cognito_jwt("invalid-token")
+        
+        assert "Token verification failed: JWKS endpoint not found" in str(excinfo.value)
+    
+    @mock.patch('services.cognito_service.PyJWKClient')
+    def test_jwt_decode_error(self, mock_jwk_client):
+        """Test handling of JWT decode errors"""
+        # Arrange: Mock JWKS client to succeed but JWT decode to fail
+        mock_signing_key = Mock()
+        mock_signing_key.key = "fake-key"
+        mock_jwk_client.return_value.get_signing_key_from_jwt.return_value = mock_signing_key
+        
+        # Mock jwt.decode to raise an exception
+        with mock.patch('services.cognito_service.jwt.decode', side_effect=jwt.InvalidTokenError("Invalid token")):
+            # Act & Assert
+            with pytest.raises(InvalidTokenException) as excinfo:
+                verify_cognito_jwt("invalid-token")
+            
+            assert "Invalid token" in str(excinfo.value)
+    
+    @mock.patch('services.cognito_service.PyJWKClient')
+    def test_jwt_get_unverified_header_error(self, mock_jwk_client):
+        """Test handling of errors when getting unverified header"""
+        # Arrange: Mock jwt.get_unverified_header to raise an exception
+        with mock.patch('services.cognito_service.jwt.get_unverified_header', side_effect=jwt.InvalidTokenError("Invalid header")):
+            # Act & Assert
+            with pytest.raises(InvalidTokenException) as excinfo:
+                verify_cognito_jwt("invalid-token")
+            
+            assert "Invalid header" in str(excinfo.value)
+    
+    @mock.patch('services.cognito_service.PyJWKClient')
+    def test_jwks_client_creation_error(self, mock_jwk_client):
+        """Test handling of errors when creating JWKS client"""
+        # Arrange: Mock PyJWKClient constructor to raise an exception
+        mock_jwk_client.side_effect = Exception("JWKS client creation failed")
+        
+        # Act & Assert
+        with pytest.raises(InvalidTokenException) as excinfo:
+            verify_cognito_jwt("invalid-token")
+        
+        assert "JWKS client creation failed" in str(excinfo.value)
+    
+    @mock.patch('services.cognito_service.os.getenv')
+    def test_missing_cognito_user_pool_id(self, mock_getenv):
+        """Test handling of missing COGNITO_USER_POOL_ID environment variable"""
+        # Arrange: Mock os.getenv to return None for COGNITO_USER_POOL_ID
+        mock_getenv.side_effect = lambda key, default=None: {
+            "COGNITO_REGION": "eu-north-1",
+            "COGNITO_USER_POOL_ID": None,
+            "COGNITO_CLIENT_ID": "test-client-id"
+        }.get(key, default)
+        
+        # Act & Assert: Should raise ConfigurationError when importing the module
+        with pytest.raises(ConfigurationError) as excinfo:
+            # Re-import the module to trigger the configuration check
+            import importlib
+            import services.cognito_service
+            importlib.reload(services.cognito_service)
+        
+        assert "Missing required environment variable: COGNITO_USER_POOL_ID" in str(excinfo.value)
+    
+    @mock.patch('services.cognito_service.os.getenv')
+    def test_missing_cognito_client_id(self, mock_getenv):
+        """Test handling of missing COGNITO_CLIENT_ID environment variable"""
+        # Arrange: Mock os.getenv to return None for COGNITO_CLIENT_ID
+        mock_getenv.side_effect = lambda key, default=None: {
+            "COGNITO_REGION": "eu-north-1",
+            "COGNITO_USER_POOL_ID": "test-user-pool-id",
+            "COGNITO_CLIENT_ID": None
+        }.get(key, default)
+        
+        # Act & Assert: Should raise ConfigurationError when importing the module
+        with pytest.raises(ConfigurationError) as excinfo:
+            # Re-import the module to trigger the configuration check
+            import importlib
+            import services.cognito_service
+            importlib.reload(services.cognito_service)
+        
+        assert "Missing required environment variable: COGNITO_CLIENT_ID" in str(excinfo.value)
+    
+    @mock.patch('services.cognito_service.PyJWKClient')
+    def test_generic_exception_in_verify_cognito_jwt(self, mock_jwk_client):
+        """Test handling of generic exceptions in verify_cognito_jwt"""
+        # Arrange: Mock PyJWKClient to raise a generic exception
+        mock_jwk_client.side_effect = Exception("Unexpected error")
+        
+        # Act & Assert
+        with pytest.raises(InvalidTokenException) as excinfo:
+            verify_cognito_jwt("invalid-token")
+        
+        # Should raise InvalidTokenException without specific message
+        assert isinstance(excinfo.value, InvalidTokenException)
+       
