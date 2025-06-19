@@ -4,11 +4,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
+import se.project.currency_converter.exceptions.CurrencyNotFound;
+import org.junit.jupiter.api.function.Executable;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -60,5 +63,21 @@ class CurrencyConverterServiceTests {
         var toCurrency = "PLN";
         var convertedAmount = service.convert(fromCurrency, toCurrency, amount);
         assertEquals(convertedAmount, (long)((amount / usdRate.getRate()) * plnRate.getRate()));
+    }
+
+    @Test
+    @DisplayName("Unknown source currency throws CurrencyNotFound")
+    void testConvert_unknownFromCurrency() {
+        Executable executable = () -> service.convert("ABC", "EUR", 1000);
+        CurrencyNotFound exception = assertThrows(CurrencyNotFound.class, executable);
+        assertEquals("Conversion to currency ABC is not available!", exception.getMessage());
+    }
+
+    @Test
+    @DisplayName("Empty target currency throws CurrencyNotFound")
+    void testConvert_emptyToCurrency() {
+        Executable executable = () -> service.convert("EUR", "", 1000);
+        CurrencyNotFound exception = assertThrows(CurrencyNotFound.class, executable);
+        assertEquals("Conversion to currency  is not available!", exception.getMessage());
     }
 }

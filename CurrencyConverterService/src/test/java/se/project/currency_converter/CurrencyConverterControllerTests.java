@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
+import se.project.currency_converter.exceptions.CurrencyNotFound;
 
 import java.util.List;
 
@@ -56,6 +57,24 @@ class CurrencyConverterControllerTests {
         ConvertResponse response = controller.convert(request);
 
         assertEquals(convertedAmount, response.getConvertedAmount());
+    }
+
+    @Test
+    @DisplayName("Incorrect currency triggers CurrencyNotFound")
+    void testConvert_withUnknownCurrency() {
+        ConvertRequest request = new ConvertRequest();
+        request.setFromCurrency("A");
+        request.setToCurrency("EUR");
+        request.setAmount(100L);
+
+        when(service.convert("A", "EUR", 100L))
+            .thenThrow(new CurrencyNotFound("A"));
+
+        try {
+            controller.convert(request);
+        } catch (CurrencyNotFound ex) {
+            assertEquals("Conversion to currency A is not available!", ex.getMessage());
+        }
     }
 
 
