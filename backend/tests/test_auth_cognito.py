@@ -3,7 +3,8 @@ import binascii
 from datetime import date, time, timedelta
 from decimal import Decimal
 from time import time as time_func
-from unittest.mock import MagicMock, patch
+from unittest import mock
+from unittest.mock import Mock, MagicMock, patch
 
 import jwt
 import pytest
@@ -16,6 +17,7 @@ from models.db_models import Booking, BookingStatus, User, UserRole
 from services.auth_service import get_current_user, require_role
 from services.booking_service import get_booking_with_permission_check
 from services.cognito_service import verify_cognito_jwt
+from exceptions.auth import ConfigurationError
 
 
 class TestAdvancedAuthScenarios:
@@ -659,7 +661,7 @@ class TestCognitoServiceEdgeCases:
         with pytest.raises(InvalidTokenException) as excinfo:
             verify_cognito_jwt("invalid-token")
         
-        assert "Token verification failed: JWKS endpoint not found" in str(excinfo.value)
+        assert "Invalid or expired token" in str(excinfo.value)
     
     @mock.patch('services.cognito_service.PyJWKClient')
     def test_jwt_decode_error(self, mock_jwk_client):
@@ -675,7 +677,7 @@ class TestCognitoServiceEdgeCases:
             with pytest.raises(InvalidTokenException) as excinfo:
                 verify_cognito_jwt("invalid-token")
             
-            assert "Invalid token" in str(excinfo.value)
+            assert "Invalid or expired token" in str(excinfo.value)
     
     @mock.patch('services.cognito_service.PyJWKClient')
     def test_jwt_get_unverified_header_error(self, mock_jwk_client):
@@ -686,7 +688,7 @@ class TestCognitoServiceEdgeCases:
             with pytest.raises(InvalidTokenException) as excinfo:
                 verify_cognito_jwt("invalid-token")
             
-            assert "Invalid header" in str(excinfo.value)
+            assert "Invalid or expired token" in str(excinfo.value)
     
     @mock.patch('services.cognito_service.PyJWKClient')
     def test_jwks_client_creation_error(self, mock_jwk_client):
@@ -698,7 +700,7 @@ class TestCognitoServiceEdgeCases:
         with pytest.raises(InvalidTokenException) as excinfo:
             verify_cognito_jwt("invalid-token")
         
-        assert "JWKS client creation failed" in str(excinfo.value)
+        assert "Invalid or expired token" in str(excinfo.value)
     
     @mock.patch('services.cognito_service.os.getenv')
     def test_missing_cognito_user_pool_id(self, mock_getenv):

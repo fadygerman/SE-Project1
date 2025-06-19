@@ -11,21 +11,37 @@ from main import app
 from models.db_models import Booking, BookingStatus
 from services.booking_service import get_car_price_in_currency
 
+def fixed_today(today):
+    class FakeDate(date):
+        @staticmethod
+        def today():
+            return today
+
+        @classmethod
+        def __instancecheck__(cls, instance):
+            return isinstance(instance, date)
+
+    return mock.patch("datetime.date", FakeDate)
 
 class TestBookingCreation:
     """Tests related to creating bookings"""
     
     @patch('models.pydantic.booking.date')
-    def test_create_valid_booking(self, mock_date, auth_client, test_data):
-        """Test successfully creating a booking
-        ATTENTION: Currency converter must be running to pass this test
-        """
+    @patch('services.booking_service.get_currency_converter_client_instance')
+    def test_create_valid_booking(self, mock_currency_client, mock_date, auth_client, test_data):
+        """Test successfully creating a booking"""
         # Mock today's date
         mock_today = date(2024, 3, 15)
         mock_date.today.return_value = mock_today
+        
         # Ensure date class still works otherwise
         mock_date.side_effect = lambda *args, **kw: date(*args, **kw)
-        
+
+        # Mock currency client
+        mock_client = Mock()
+        mock_client.get_currency_rate.return_value = Decimal("1.00")
+        mock_currency_client.return_value = mock_client
+
         user_id = test_data["users"][0].id
         car_id = test_data["cars"][0].id
         
@@ -63,17 +79,26 @@ class TestBookingCreation:
         expected_total = car_price * 4
         assert float(created_booking["total_cost"]) == expected_total
 
+
     @patch('services.booking_service.get_currency_converter_client_instance')
-    def test_create_booking_currency_service_unavailable(self, mock_currency_converter_client, auth_client, test_data):
+    @patch('models.pydantic.booking.date')
+    def test_create_booking_currency_service_unavailable(self, mock_date, mock_currency_converter_client, auth_client, test_data):
         """Test creating a booking when currency service is unavailable"""
+        
+         # Mock today's date
+        mock_today = date(2025, 5, 15)
+        mock_date.today.return_value = mock_today
+        mock_date.side_effect = lambda *args, **kwargs: date(*args, **kwargs)
+
         # Mock the currency converter client to raise an exception
         mock_currency_converter_client.side_effect = CurrencyServiceUnavailableException("Currency service unavailable")
         
+        car_id = test_data["cars"][0].id
+
         booking_data = {
-            "user_id": test_data["users"][0].id,
-            "car_id": test_data["cars"][0].id,
-            "start_date": "2025-06-01",
-            "end_date": "2025-06-05",
+            "car_id": car_id,
+            "start_date": str(mock_today + timedelta(days=1)),
+            "end_date": str(mock_today + timedelta(days=5)),
             "planned_pickup_time": "09:30:00",
             "currency_code": "EUR",  # Using non-USD currency to trigger conversion
         }
@@ -87,48 +112,64 @@ class TestBookingCreation:
         error = response.json()
         assert "Currency service is unavailable" in error["detail"]
 
-    def test_create_booking_car_not_found(self, auth_client, test_data):
+    
+    @patch('services.booking_service.get_currency_converter_client_instance')
+    def test_create_booking_car_not_found(self, mock_currency_client, auth_client):
         """Test creating a booking with non-existent car ID"""
-        booking_data = {
-            "user_id": test_data["users"][0].id,
-            "car_id": 999,  # Non-existent car ID
-            "start_date": "2025-06-01",
-            "end_date": "2025-06-05",
-            "planned_pickup_time": "09:30:00",
-            "currency_code": "USD",
-        }
-        
-        response = auth_client.post("/api/v1/bookings/", json=booking_data)
-        
-        # Check status code
-        assert response.status_code == status.HTTP_404_NOT_FOUND
-        
-        # Check error message
-        error = response.json()
-        assert "Car with ID 999 not found" in error["detail"]
 
-    def test_create_booking_unavailable_car(self, auth_client, test_data):
+        with fixed_today(date(2025, 8, 9)):
+            # Mock currency service to return valid rate
+            mock_client = Mock()
+            mock_client.get_currency_rate.return_value = 1.0
+            mock_currency_client.return_value = mock_client
+
+            booking_data = {
+                "car_id": 999,  # Non-existent car ID
+                "start_date": "2025-08-10",
+                "end_date": "2025-08-14",
+                "planned_pickup_time": "09:30:00",
+                "currency_code": "USD",
+            }
+
+            response = auth_client.post("/api/v1/bookings/", json=booking_data)
+
+            # Check status code
+            assert response.status_code == status.HTTP_404_NOT_FOUND
+
+            # Check error message
+            error = response.json()
+            assert "Car with ID 999 not found" in error["detail"]
+
+
+    @patch('services.booking_service.get_currency_converter_client_instance')
+    def test_create_booking_unavailable_car(self, mock_currency_client, auth_client, test_data):
         """Test creating a booking for an unavailable car"""
-        # Car 2 is marked as unavailable in test data
-        unavailable_car_id = test_data["cars"][1].id
         
-        booking_data = {
-            "user_id": test_data["users"][0].id,
-            "car_id": unavailable_car_id,
-            "start_date": "2025-06-01",
-            "end_date": "2025-06-05",
-            "planned_pickup_time": "14:00:00",
-            "currency_code": "USD",
-        }
-        
-        response = auth_client.post("/api/v1/bookings/", json=booking_data)
-        
-        # Check status code
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        
-        # Check error message
-        error = response.json()
-        assert f"Car with ID {unavailable_car_id} is not available" in error["detail"]
+        with fixed_today(date(2025, 8, 9)):
+            # Mock currency service to return valid rate
+            mock_client = Mock()
+            mock_client.get_currency_rate.return_value = 1.0
+            mock_currency_client.return_value = mock_client
+
+            unavailable_car_id = test_data["cars"][1].id  # Car 2 is unavailable
+
+            booking_data = {
+                "car_id": unavailable_car_id,
+                "start_date": "2025-08-10",
+                "end_date": "2025-08-14",
+                "planned_pickup_time": "14:00:00",
+                "currency_code": "USD",
+            }
+
+            response = auth_client.post("/api/v1/bookings/", json=booking_data)
+
+            # Check status code
+            assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+            # Check error message
+            error = response.json()
+            assert f"Car with ID {unavailable_car_id} is not available" in error["detail"]
+
 
     @patch('models.pydantic.booking.date')
     def test_create_booking_start_date_today(self, mock_date, auth_client, test_data):
@@ -209,8 +250,15 @@ class TestBookingCreation:
         error = response.json()
         assert "already booked for the selected dates" in error["detail"]
 
-    def test_create_booking_invalid_dates(self, auth_client, test_data):
+    
+    @patch('models.pydantic.booking.date')
+    def test_create_booking_invalid_dates(self, mock_date, auth_client, test_data):
         """Test creating a booking with end date before start date"""
+
+        mock_today = date(2025, 6, 1)
+        mock_date.today.return_value = mock_today
+        mock_date.side_effect = lambda *args, **kwargs: date(*args, **kwargs)
+
         booking_data = {
             "user_id": test_data["users"][0].id,
             "car_id": test_data["cars"][0].id,
@@ -587,3 +635,173 @@ class TestBookingValidation:
         
         # Should get validation error from Pydantic
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+class TestCarReturn:
+    
+    @patch('services.booking_service.date')
+    def test_return_car_by_booking_owner(self, mock_date, auth_client, test_data, test_db):
+        """User returns own booked car"""
+        booking = test_data["bookings"][0]  # Booking belongs to the auth'd user
+        booking.pickup_date = booking.start_date
+        booking.status = BookingStatus.ACTIVE
+        test_db.commit()
+
+        today = date(2025, 6, 19)
+        mock_date.today.return_value = today
+        mock_date.side_effect = lambda *args, **kwargs: date(*args, **kwargs)
+
+        response = auth_client.put(
+            f"/api/v1/bookings/{booking.id}",
+            json={"return_date": str(today)},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "COMPLETED"
+        assert data["return_date"] == str(today)
+
+
+class TestCarReturn:
+
+    def test_return_car_by_different_user(self, other_auth_client, test_data, test_db):
+        """User tries to return a car they did not book"""
+        booking = test_data["bookings"][0]  # Booking belongs to user1
+        booking.pickup_date = booking.start_date
+        booking.status = BookingStatus.ACTIVE
+        test_db.commit()
+
+        today = date.today()
+
+        response = other_auth_client.put(
+            f"/api/v1/bookings/{booking.id}",
+            json={"return_date": str(today)},
+        )
+
+        assert response.status_code == 403
+        assert "access your own bookings" in response.json()["detail"].lower()
+
+
+
+
+# class TestBookingCreationIntegrationTests:
+#     """Tests related to creating bookings"""
+    
+#     @pytest.mark.integration
+#     @patch('models.pydantic.booking.date')
+#     def test_create_valid_booking(self, mock_date, auth_client, test_data):
+#         """Test successfully creating a booking
+#         ATTENTION: Currency converter must be running to pass this test
+#         """
+#         # Mock today's date
+#         mock_today = date(2024, 3, 15)
+#         mock_date.today.return_value = mock_today
+#         # Ensure date class still works otherwise
+#         mock_date.side_effect = lambda *args, **kw: date(*args, **kw)
+        
+#         user_id = test_data["users"][0].id
+#         car_id = test_data["cars"][0].id
+        
+#         # Create a booking with start date at least tomorrow
+#         tomorrow = mock_today + timedelta(days=1)
+#         start_date = tomorrow
+#         end_date = start_date + timedelta(days=3)
+        
+#         booking_data = {
+#             # No need to specify user_id as it will be taken from the authenticated user
+#             "car_id": car_id,
+#             "start_date": str(start_date),
+#             "end_date": str(end_date),
+#             "planned_pickup_time": "10:00:00",
+#             "currency_code": "EUR",
+#         }
+        
+#         response = auth_client.post("/api/v1/bookings/", json=booking_data)
+        
+#         # Check status code
+#         assert response.status_code == status.HTTP_201_CREATED
+        
+#         # Check response data
+#         created_booking = response.json()
+#         assert created_booking["user_id"] == user_id  # Should use auth user's ID
+#         assert created_booking["car_id"] == car_id
+#         assert created_booking["start_date"] == str(start_date)
+#         assert created_booking["end_date"] == str(end_date)
+#         assert created_booking["status"] == "PLANNED"
+#         assert created_booking["currency_code"] == "EUR"
+#         assert created_booking["exchange_rate"] is not None
+        
+#         # Check total cost calculation (4 days × car price)
+#         car_price = float(test_data["cars"][0].price_per_day)
+#         expected_total = car_price * 4
+#         assert float(created_booking["total_cost"]) == expected_total
+
+#     @pytest.mark.integration
+#     @patch('services.booking_service.get_currency_converter_client_instance')
+#     def test_create_booking_currency_service_unavailable(self, mock_currency_converter_client, auth_client, test_data):
+#         """Test creating a booking when currency service is unavailable"""
+#         # Mock the currency converter client to raise an exception
+#         mock_currency_converter_client.side_effect = CurrencyServiceUnavailableException("Currency service unavailable")
+        
+#         booking_data = {
+#             "user_id": test_data["users"][0].id,
+#             "car_id": test_data["cars"][0].id,
+#             "start_date": "2025-06-01",
+#             "end_date": "2025-06-05",
+#             "planned_pickup_time": "09:30:00",
+#             "currency_code": "EUR",  # Using non-USD currency to trigger conversion
+#         }
+        
+#         response = auth_client.post("/api/v1/bookings/", json=booking_data)
+        
+#         # Check status code - should be service unavailable
+#         assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
+        
+#         # Check error message
+#         error = response.json()
+#         assert "Currency service is unavailable" in error["detail"]
+
+#     @pytest.mark.integration
+#     def test_create_booking_car_not_found(self, auth_client, test_data):
+#         """Test creating a booking with non-existent car ID"""
+#         booking_data = {
+#             "user_id": test_data["users"][0].id,
+#             "car_id": 999,  # Non-existent car ID
+#             "start_date": "2025-06-01",
+#             "end_date": "2025-06-05",
+#             "planned_pickup_time": "09:30:00",
+#             "currency_code": "USD",
+#         }
+        
+#         response = auth_client.post("/api/v1/bookings/", json=booking_data)
+        
+#         # Check status code
+#         assert response.status_code == status.HTTP_404_NOT_FOUND
+        
+#         # Check error message
+#         error = response.json()
+#         assert "Car with ID 999 not found" in error["detail"]
+
+#     @pytest.mark.integration
+#     def test_create_booking_unavailable_car(self, auth_client, test_data):
+#         """Test creating a booking for an unavailable car"""
+#         # Car 2 is marked as unavailable in test data
+#         unavailable_car_id = test_data["cars"][1].id
+        
+#         booking_data = {
+#             "user_id": test_data["users"][0].id,
+#             "car_id": unavailable_car_id,
+#             "start_date": "2025-06-01",
+#             "end_date": "2025-06-05",
+#             "planned_pickup_time": "14:00:00",
+#             "currency_code": "USD",
+#         }
+        
+#         response = auth_client.post("/api/v1/bookings/", json=booking_data)
+        
+#         # Check status code
+#         assert response.status_code == status.HTTP_400_BAD_REQUEST
+        
+#         # Check error message
+#         error = response.json()
+#         assert f"Car with ID {unavailable_car_id} is not available" in error["detail"]

@@ -226,3 +226,13 @@ def admin_client(client, test_data):
 
     # Restore original dependency overrides after the test
     app.dependency_overrides = original_overrides
+
+
+@pytest.fixture
+def other_auth_client(client, test_data):
+    async def override_get_current_user():
+        return test_data["users"][1]
+
+    app.dependency_overrides[get_current_user] = override_get_current_user
+    yield client
+    app.dependency_overrides.clear()
