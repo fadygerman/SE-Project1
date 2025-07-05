@@ -5,7 +5,7 @@
   },
   "item": [
     {
-      "name": "GET /cars mit ungültigem Token",
+      "name": "GET /api/v1/cars mit ungültigem Token",
       "request": {
         "method": "GET",
         "header": [
@@ -15,11 +15,42 @@
           }
         ],
         "url": {
-          "raw": "http://localhost:8000/cars",
+          "raw": "http://localhost:8000/api/v1/cars",
           "protocol": "http",
           "host": ["localhost"],
           "port": "8000",
-          "path": ["cars"]
+          "path": ["api", "v1", "cars"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Statuscode ist 401 Unauthorized\", function () {",
+              "    pm.response.to.have.status(401);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "GET /api/v1/bookings/my mit ungültigem Token",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer xyz123_invalid"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8000/api/v1/bookings/my",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "v1", "bookings", "my"]
         }
       },
       "event": [
