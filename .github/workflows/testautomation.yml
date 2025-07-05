@@ -62,26 +62,27 @@ jobs:
       - name: Wait for services to start
         run: sleep 20
 
-      # --- API TESTS (Postman) ---
+      # --- API SMOKE TESTS ---
       - name: Install Newman
         run: npm install -g newman
 
       - name: Run Postman Smoke Tests
         run: |
-          newman run postman/collections/smoketests.postman_collection.json \
-            -e postman/environments/test_environment.postman_environment.json
+          newman run postman/collections/smoketests.postman_collection.json
 
+      # --- UI SMOKE TESTS ---
+      - name: Install Selenium requirements
+        run: pip install -r tests/requirements.txt
+
+      - name: Run Selenium Smoke Tests
+        run: pytest -s tests/ui/test_smoke_ui.py
+
+      # --- API REGRESSION TESTS ---
       - name: Run Postman Regression Tests
         run: |
           newman run postman/collections/regression_TF1-05.postman_collection.json \
             -e postman/environments/test_environment.postman_environment.json
 
-      # --- UI TESTS (Selenium) ---
-      - name: Install Selenium requirements
-        run: pip install -r tests/requirements.txt
-
+      # --- UI REGRESSION TESTS ---
       - name: Run Selenium Regression Tests
         run: pytest -s tests/ui/test_login_regression.py
-
-      - name: Run Selenium Smoke Tests
-        run: pytest -s tests/ui/test_smoke_ui.py
