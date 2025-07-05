@@ -32,9 +32,7 @@ def driver():
     chrome_options.add_argument("--disable-web-security")
     chrome_options.add_argument("--disable-features=VizDisplayCompositor")
     
-    local_chromedriver = os.path.join(os.path.dirname(__file__), "chromedriver")
-    service = Service(executable_path=local_chromedriver)
-    driver = webdriver.Chrome(service=service, options=chrome_options)
+    driver = webdriver.Chrome(options=chrome_options)
     
     yield driver
     
