@@ -67,7 +67,16 @@ def seed_data():
             phone_number="+14155552674", 
             cognito_id="cognito_sample_id_4",
             role=UserRole.USER  # Another regular user
-        )
+        ),
+        User(
+            first_name="Nils", 
+            last_name="Petsch", 
+            email="nils_petsch@gmx.at", 
+            phone_number="+4369918254877", 
+            cognito_id="b03cd92c-10a1-7093-60a7-ec6d7b109050",
+            role=UserRole.USER  # Another regular user
+        ),
+
     ]
     
     for user in users:
@@ -180,7 +189,7 @@ def seed_data():
         ),
         # Active booking (currently ongoing)
         Booking(
-            user_id=users[3].id,  # Emily Wilson (regular user)
+            user_id=users[4].id,  # Nils Petsch (regular user)
             car_id=cars[3].id,    # Chevrolet Camaro
             start_date=today - timedelta(days=2),
             end_date=today + timedelta(days=3),
