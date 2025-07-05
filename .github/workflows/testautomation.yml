@@ -19,15 +19,28 @@ jobs:
           python-version: "3.12"
 
       - name: Install backend dependencies
+        working-directory: backend
         run: |
-          cd backend
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
       - name: Start backend server
+        working-directory: backend
         run: |
-          cd backend
           nohup uvicorn main:app --host 0.0.0.0 --port 8000 &
+
+      - name: Wait for backend to become healthy
+        run: |
+          RETRIES=10
+          until curl -sSf http://localhost:8000/health > /dev/null; do
+            echo "Waiting for backend..."
+            sleep 3
+            ((RETRIES--))
+            if [ $RETRIES -le 0 ]; then
+              echo "Backend did not become ready in time!"
+              exit 1
+            fi
+          done
 
       # --- CURRENCY CONVERTER SETUP (Java + Maven) ---
       - name: Set up Java
@@ -65,20 +78,6 @@ jobs:
       # --- API SMOKE TESTS ---
       - name: Install Newman
         run: npm install -g newman
-
-      # wait for services to boot
-      - name: Wait for backend to become healthy
-        run: |
-          RETRIES=10
-          until curl -sSf http://localhost:8000/health > /dev/null; do
-            echo "Waiting for backend..."
-            sleep 3
-            ((RETRIES--))
-            if [ $RETRIES -le 0 ]; then
-              echo "Backend did not become ready in time!"
-              exit 1
-            fi
-          done
 
       - name: Run Postman Smoke Tests
         run: |
