@@ -183,3 +183,6 @@ cython_debug/
 
 # act
 .act/secrets
+.vscode
+chromedriver
+__pycache__
