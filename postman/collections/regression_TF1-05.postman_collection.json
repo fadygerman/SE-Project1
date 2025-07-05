@@ -1,0 +1,39 @@
+{
+  "info": {
+    "name": "Regressionstest_TF1-05",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "GET /cars mit ungültigem Token",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer xyz123_invalid"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8000/cars",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["cars"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Statuscode ist 401 Unauthorized\", function () {",
+              "    pm.response.to.have.status(401);",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
