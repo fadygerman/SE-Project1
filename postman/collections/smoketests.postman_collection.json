@@ -1,0 +1,40 @@
+{
+  "info": {
+    "name": "Smoke Tests",
+    "_postman_id": "abcd1234-5678-9012-efgh-345678901234",
+    "description": "Basic smoke tests to ensure core services are up",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/health",
+          "host": ["{{base_url}}"],
+          "path": ["health"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Response contains 'status' key with value 'healthy'\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.status).to.eql(\"healthy\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

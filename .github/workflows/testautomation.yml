@@ -1,0 +1,102 @@
+name: Regression & Smoke Tests
+
+on:
+  push:
+    branches: ["regression-testing"]
+
+jobs:
+  testautomation:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      # --- BACKEND SETUP (FastAPI) ---
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Start backend server
+        working-directory: backend
+        run: |
+          nohup uvicorn main:app --host 0.0.0.0 --port 8000 &
+
+      - name: Wait for backend to become healthy
+        run: |
+          RETRIES=10
+          until curl -sSf http://localhost:8000/health > /dev/null; do
+            echo "Waiting for backend..."
+            sleep 3
+            ((RETRIES--))
+            if [ $RETRIES -le 0 ]; then
+              echo "Backend did not become ready in time!"
+              exit 1
+            fi
+          done
+
+      # --- CURRENCY CONVERTER SETUP (Java + Maven) ---
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Build and Start Currency Converter Service
+        run: |
+          cd CurrencyConverterService
+          mvn clean install
+          nohup java -jar target/currency-converter-service-0.0.1-SNAPSHOT.jar &
+
+      # --- FRONTEND SETUP (Vite + React) ---
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm install
+
+      - name: Start frontend server
+        run: |
+          cd frontend
+          nohup npm run dev -- --port 5173 &
+
+      # --- WAIT FOR SERVICES TO BOOT ---
+      - name: Wait for services to start
+        run: sleep 20
+
+      # --- API SMOKE TESTS ---
+      - name: Install Newman
+        run: npm install -g newman
+
+      - name: Run Postman Smoke Tests
+        run: |
+          newman run postman/collections/smoketests.postman_collection.json \
+            -e postman/environments/test_environment.postman_environment.json
+
+      # --- UI SMOKE TESTS ---
+      - name: Install Selenium requirements
+        run: pip install -r tests/requirements.txt
+
+      - name: Run Selenium Smoke Tests
+        run: pytest -s tests/ui/test_smoke_ui.py
+
+      # --- API REGRESSION TESTS ---
+      - name: Run Postman Regression Tests
+        run: |
+          newman run postman/collections/regression_TF1-05.postman_collection.json \
+            -e postman/environments/test_environment.postman_environment.json
+
+      # --- UI REGRESSION TESTS ---
+      - name: Run Selenium Regression Tests
+        run: pytest -s tests/ui/test_login_regression.py

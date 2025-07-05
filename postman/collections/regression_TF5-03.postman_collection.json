@@ -1,0 +1,114 @@
+{
+  "info": {
+    "name": "Regressionstest_TF5-03",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "PUT /api/v1/bookings/:booking_id Cancel Booking",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{valid_token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"CANCELED\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8000/api/v1/bookings/{{booking_id}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "v1", "bookings", "{{booking_id}}"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Statuscode ist 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const jsonData = pm.response.json();",
+              "pm.test(\"Buchung ist jetzt CANCELED\", function () {",
+              "    pm.expect(jsonData.status).to.eql(\"CANCELED\");",
+              "});",
+              "// Speichere car_id für spätere Anfragen",
+              "pm.environment.set(\"car_id\", jsonData.car_id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "GET /api/v1/bookings/:booking_id Verify Status",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{valid_token}}" }
+        ],
+        "url": {
+          "raw": "http://localhost:8000/api/v1/bookings/{{booking_id}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "v1", "bookings", "{{booking_id}}"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Statuscode ist 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const jsonData = pm.response.json();",
+              "pm.test(\"Buchungsstatus ist CANCELED\", function () {",
+              "    pm.expect(jsonData.status).to.eql(\"CANCELED\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "GET /api/v1/cars/:car_id Verify Availability",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{valid_token}}" }
+        ],
+        "url": {
+          "raw": "http://localhost:8000/api/v1/cars/{{car_id}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "v1", "cars", "{{car_id}}"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Statuscode ist 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const jsonData = pm.response.json();",
+              "pm.test(\"Auto ist wieder verfügbar\", function () {",
+              "    pm.expect(jsonData.is_available).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

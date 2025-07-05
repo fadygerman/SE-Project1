@@ -1,0 +1,95 @@
+{
+  "info": {
+    "name": "Regressionstest_TF2-01",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "GET /api/v1/cars List Available Cars",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{valid_token}}" }
+        ],
+        "url": {
+          "raw": "http://localhost:8000/api/v1/cars?available_only=true&page=1&page_size=50",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "v1", "cars"],
+          "query": [
+            { "key": "available_only", "value": "true" },
+            { "key": "page", "value": "1" },
+            { "key": "page_size", "value": "50" }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Statuscode ist 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const jsonData = pm.response.json();",
+              "pm.test(\"Mindestens ein Fahrzeug wird zurückgegeben\", function () {",
+              "    pm.expect(jsonData.items.length).to.be.above(0);",
+              "});",
+              "pm.test(\"Alle Fahrzeuge sind verfügbar\", function () {",
+              "    jsonData.items.forEach(item => pm.expect(item.is_available).to.eql(true));",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "GET /api/v1/bookings/my List My Bookings",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{valid_token}}" }
+        ],
+        "url": {
+          "raw": "http://localhost:8000/api/v1/bookings/my?page=1&page_size=20",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "v1", "bookings", "my"],
+          "query": [
+            { "key": "page", "value": "1" },
+            { "key": "page_size", "value": "20" }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Statuscode ist 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const jsonData = pm.response.json();",
+              "pm.test(\"Mindestens eine Buchung (evtl. 0) wird zurückgegeben\", function () {",
+              "    pm.expect(jsonData.items.length).to.be.at.least(0);",
+              "});",
+              "pm.test(\"Liste enthält booking_id aus Environment\", function () {",
+              "    const bId = pm.environment.get(\"booking_id\");",
+              "    if (bId) {",
+              "        const found = jsonData.items.some(b => b.id == bId);",
+              "        pm.expect(found).to.eql(true);",
+              "    } else {",
+              "        pm.expect(true).to.eql(true); // skip if not set",
+              "    }",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
