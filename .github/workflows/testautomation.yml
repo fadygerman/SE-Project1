@@ -68,7 +68,8 @@ jobs:
 
       - name: Run Postman Smoke Tests
         run: |
-          newman run postman/collections/smoketests.postman_collection.json
+          newman run postman/collections/smoketests.postman_collection.json \
+            -e postman/environments/test_environment.postman_environment.json
 
       # --- UI SMOKE TESTS ---
       - name: Install Selenium requirements
