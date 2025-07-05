@@ -5,24 +5,65 @@ on:
     branches: ["regression-testing"]
 
 jobs:
-  test:
+  testautomation:
     runs-on: ubuntu-latest
-
-    services:
-      backend:
-        image: your-backend-image
-        ports:
-          - 8000:8000
-      frontend:
-        image: your-frontend-image
-        ports:
-          - 5173:5173
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Install Newman for API Tests
+      # --- BACKEND SETUP (FastAPI) ---
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Start backend server
+        run: |
+          cd backend
+          nohup uvicorn main:app --host 0.0.0.0 --port 8000 &
+
+      # --- CURRENCY CONVERTER SETUP (Java + Maven) ---
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Build and Start Currency Converter Service
+        run: |
+          cd CurrencyConverterService
+          mvn clean install
+          nohup java -jar target/currency-converter-service-0.0.1-SNAPSHOT.jar &
+
+      # --- FRONTEND SETUP (Vite + React) ---
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm install
+
+      - name: Start frontend server
+        run: |
+          cd frontend
+          nohup npm run dev -- --port 5173 &
+
+      # --- WAIT FOR SERVICES TO BOOT ---
+      - name: Wait for services to start
+        run: sleep 20
+
+      # --- API TESTS (Postman) ---
+      - name: Install Newman
         run: npm install -g newman
 
       - name: Run Postman Smoke Tests
@@ -35,12 +76,8 @@ jobs:
           newman run postman/collections/regression_TF1-05.postman_collection.json \
             -e postman/environments/test_environment.postman_environment.json
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.12"
-
-      - name: Install Python Dependencies
+      # --- UI TESTS (Selenium) ---
+      - name: Install Selenium requirements
         run: pip install -r tests/requirements.txt
 
       - name: Run Selenium Regression Tests
