@@ -1,0 +1,50 @@
+name: Regression & Smoke Tests
+
+on:
+  push:
+    branches: ["regression-testing"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      backend:
+        image: your-backend-image
+        ports:
+          - 8000:8000
+      frontend:
+        image: your-frontend-image
+        ports:
+          - 5173:5173
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Install Newman for API Tests
+        run: npm install -g newman
+
+      - name: Run Postman Smoke Tests
+        run: |
+          newman run postman/collections/smoketests.postman_collection.json \
+            -e postman/environments/test_environment.postman_environment.json
+
+      - name: Run Postman Regression Tests
+        run: |
+          newman run postman/collections/regression_TF1-05.postman_collection.json \
+            -e postman/environments/test_environment.postman_environment.json
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: Install Python Dependencies
+        run: pip install -r tests/requirements.txt
+
+      - name: Run Selenium Regression Tests
+        run: pytest -s tests/ui/test_login_regression.py
+
+      - name: Run Selenium Smoke Tests
+        run: pytest -s tests/ui/test_smoke_ui.py
